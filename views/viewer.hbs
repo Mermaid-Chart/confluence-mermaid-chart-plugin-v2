@@ -16,11 +16,23 @@
 <script type="module">
     import {IMAGE_SIZES} from '/js/constatnts.js';
     const imageContainer = document.getElementById('image');
-    AP.confluence.getMacroBody((macroBody) => {
-        const img = document.createElement("img")
-        img.src = 'data:image/x-png;base64, ' + macroBody;
-        imageContainer.appendChild(img);
+    AP.confluence.getMacroBody(async (macroBody) => {
+       try {
+    const bodyData = JSON.parse(macroBody);
+    const img = document.createElement("img");
+
+    if (bodyData.url) {
+        img.src = bodyData.url;
+    } else {
+        img.src = 'data:image/x-png;base64,' + macroBody;
+    }
+
+    imageContainer.appendChild(img);
+} catch (e) {
+    console.error('Error parsing macro body:', e);
+}
     });
+
     AP.confluence.getMacroData(async (data) => {
         if (data.caption) {
             document.getElementById('caption').innerText = data.caption;

@@ -54,7 +54,22 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
   useEffect(() => {
     window.AP.confluence.getMacroBody((macroBody) => {
-      setData((data) => ({ ...data, diagramImage: macroBody }));
+      try {
+        const bodyData = JSON.parse(macroBody);
+        if (bodyData.url) {
+          setData((data) => ({ 
+            ...data, 
+            diagramUrl: bodyData.url,
+            major: bodyData.v.split('.')[0],
+            minor: bodyData.v.split('.')[1],
+            documentID: bodyData.d,
+            projectID: bodyData.p
+          }));
+          return;
+        } 
+      } catch (e) {
+        setData((data) => ({ ...data, diagramImage: macroBody }));
+      }
     });
 
     window.AP.confluence.getMacroData(({ __bodyContent: _, ...params }) => {
@@ -63,13 +78,35 @@ export function Form({ mcAccessToken, user, onLogout }) {
     });
 
     window.AP.events.on("dialog.submit", async () => {
-      const { diagramImage: _, ...saveData } = dataRef.current;
-      await window.AP.confluence.saveMacro(
-        saveData,
-        dataRef.current.diagramImage
-      );
+      try {
+        const { diagramImage, ...saveData } = dataRef.current;
 
-      window.AP.confluence.closeMacroEditor();
+        const bodyContent = {
+          url: `${MC_BASE_URL}/raw/${saveData.documentID}?version=v${saveData.major}.${saveData.minor}&theme=light&format=png`,
+          v: `${saveData.major}.${saveData.minor}`, 
+          d: saveData.documentID, 
+          p: saveData.projectID 
+        };
+
+        
+        const macroParams = {
+          documentID: saveData.documentID,
+          projectID: saveData.projectID,
+          major: saveData.major,
+          minor: saveData.minor,
+          caption: saveData.caption,
+          size: saveData.size
+        };
+
+        await window.AP.confluence.saveMacro(
+          macroParams,
+          JSON.stringify(bodyContent)
+        );
+        window.AP.confluence.closeMacroEditor();
+      } catch (error) {
+        console.error('Failed to save macro:', error);
+        return;
+      }
     });
 
     window.AP.dialog.disableCloseOnSubmit();
