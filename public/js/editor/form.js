@@ -4,6 +4,7 @@ import htm from "https://esm.sh/htm";
 import { IMAGE_SIZES } from "/js/constatnts.js";
 import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
+import { compressBase64Image } from "/js/imageUtils.js";
 
 const html = htm.bind(h);
 
@@ -62,15 +63,31 @@ export function Form({ mcAccessToken, user, onLogout }) {
       setinitialized(true);
     });
 
-    window.AP.events.on("dialog.submit", async () => {
-      const { diagramImage: _, ...saveData } = dataRef.current;
-      await window.AP.confluence.saveMacro(
-        saveData,
-        dataRef.current.diagramImage
-      );
-
+  window.AP.events.on("dialog.submit", async () => {
+    const { diagramImage, ...saveData } = dataRef.current;
+    const compressedDiagramCode = await compressBase64Image(saveData.diagramCode, 0.8, 1000);
+    const macroParams = {
+      documentID: saveData.documentID,
+      projectID: saveData.projectID,
+      major: saveData.major,
+      minor: saveData.minor,
+      caption: saveData.caption,
+      diagramCode:compressedDiagramCode,
+      size: saveData.size
+    };
+    try {
+      let bodyDataToSave = diagramImage;
+      if (diagramImage && diagramImage.length > 0) {
+        bodyDataToSave = await compressBase64Image(diagramImage, 0.8, 1000)
+          .catch(() => diagramImage); 
+      }
+      await window.AP.confluence.saveMacro(macroParams, bodyDataToSave);
       window.AP.confluence.closeMacroEditor();
-    });
+
+    } catch (error) {
+      console.error(`Failed to save the diagram. Please try again.\n\nError: ${error.message}`);
+    }
+  });
 
     window.AP.dialog.disableCloseOnSubmit();
 
