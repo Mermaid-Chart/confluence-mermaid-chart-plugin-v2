@@ -4,7 +4,7 @@ import htm from "https://esm.sh/htm";
 import { IMAGE_SIZES } from "/js/constatnts.js";
 import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
-import { compressBase64Image } from "/js/imageUtils.js";
+import { compressBase64Image,sizeConfig, calculateDataSize } from "/js/imageUtils.js";
 
 const html = htm.bind(h);
 
@@ -65,27 +65,43 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
   window.AP.events.on("dialog.submit", async () => {
     const { diagramImage, ...saveData } = dataRef.current;
-    const compressedDiagramCode = await compressBase64Image(saveData.diagramCode, 0.8, 1000);
     const macroParams = {
       documentID: saveData.documentID,
       projectID: saveData.projectID,
       major: saveData.major,
       minor: saveData.minor,
       caption: saveData.caption,
-      diagramCode:compressedDiagramCode,
+      diagramCode: saveData.diagramCode,
       size: saveData.size
     };
+    
     try {
       let bodyDataToSave = diagramImage;
       if (diagramImage && diagramImage.length > 0) {
-        bodyDataToSave = await compressBase64Image(diagramImage, 0.8, 1000)
-          .catch(() => diagramImage); 
+        const macroParamsSize = calculateDataSize(macroParams);
+        const bodyDataSize = calculateDataSize(diagramImage);
+        const totalSize = macroParamsSize + bodyDataSize;
+
+        if (totalSize > sizeConfig.maxUncompressedSize) {
+          bodyDataToSave = await compressBase64Image(
+            diagramImage, 
+            sizeConfig.compressionQuality, 
+            sizeConfig.compressionMaxWidth
+          ).catch(() => diagramImage);
+          
+          macroParams.diagramCode = await compressBase64Image(
+            saveData.diagramCode, 
+            sizeConfig.compressionQuality, 
+            sizeConfig.compressionMaxWidth
+          ).catch(() => saveData.diagramCode);
+        } 
       }
+      
       await window.AP.confluence.saveMacro(macroParams, bodyDataToSave);
       window.AP.confluence.closeMacroEditor();
 
     } catch (error) {
-      console.error(`Failed to save the diagram. Please try again.\n\nError: ${error.message}`);
+      console.error("The diagram is too large to save, Try simplifying your diagram or reducing its complexity");
     }
   });
 

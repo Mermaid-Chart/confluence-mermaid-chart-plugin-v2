@@ -1,4 +1,9 @@
-// Utility functions for image processing
+// Configuration for size limits and compression settings
+export const sizeConfig = {
+  maxUncompressedSize: 1572864, 
+  compressionQuality: 0.8,
+  compressionMaxWidth: 1000
+};
 
 /**
  * Compresses a base64 image by reducing quality
@@ -51,5 +56,16 @@ export function compressBase64Image(base64String, quality = 0.8, maxWidth = 1200
     }
   });
 }
+
+/**
+ * Calculate the size of data in bytes
+ * @param {string|object} data - The data to calculate size for
+ * @returns {number} Size in bytes
+ */
+export const calculateDataSize = (data) => {
+  return new TextEncoder().encode(
+    typeof data === 'string' ? data : JSON.stringify(data)
+  ).length;
+};
 
 
