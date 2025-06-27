@@ -1,0 +1,42 @@
+app:
+  id: ari:cloud:ecosystem::app/5abd9a6c-d5a4-497c-8ff7-cad8b9000415
+  connect:
+    key: mermaid-chart-app-for-confluence
+    remote: connect
+    authentication: jwt
+  runtime:
+    name: nodejs20.x
+remotes:
+  - key: connect
+    baseUrl: https://confluence.mermaidchart.com
+connectModules:
+  confluence:lifecycle:
+    - key: lifecycle-events
+      installed: /installed
+  confluence:dynamicContentMacros:
+    - key: mermaid
+      name:
+        value: Mermaid chart
+      icon:
+        width: 80
+        height: 80
+        url: /icon_80x80.png
+      url: /viewer
+      description:
+        value: Insert Mermaid chart diagram
+      outputType: block
+      bodyType: plain-text
+      editor:
+        url: /editor
+        width: 95%
+        height: 95%
+        cacheable: false
+        editTitle:
+          value: Edit diagram
+        insertTitle:
+          value: Insert diagram
+permissions:
+  scopes:
+    - read:connect-confluence
+    - write:connect-confluence
+    - act-as-user:connect-confluence
