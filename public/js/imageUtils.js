@@ -12,7 +12,7 @@ export const sizeConfig = {
  * @param {number} maxWidth - Maximum width for resizing
  * @returns {Promise<string>} - Compressed base64 string
  */
-export function compressBase64Image(base64String, quality = 0.8, maxWidth = 1200) {
+export function compressBase64Image(base64String, quality = sizeConfig.compressionQuality, maxWidth = sizeConfig.compressionMaxWidth) {
   return new Promise((resolve, reject) => {
     try {
       const canvas = document.createElement('canvas');
