@@ -27,12 +27,12 @@
     "nocache": "4.0.0",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
+    "sqlite3": "^5.1.7",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
     "longjohn": "^0.2.12",
-    "nodemon": "^2.0.4",
-    "sqlite3": "^5.1.7"
+    "nodemon": "^2.0.4"
   }
 }
