@@ -6,7 +6,7 @@ export const sizeConfig = {
 };
 
 /**
- * Compresses a base64 image by reducing quality
+ * Compresses a base64 image 
  * @param {string} base64String - The base64 image string
  * @param {number} quality - Quality factor (0.1 to 1.0)
  * @param {number} maxWidth - Maximum width for resizing
