@@ -76,6 +76,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
     };
     
     try {
+      // Both diagramImage and saveData.diagramCode contain base64-encoded image data
       let bodyDataToSave = diagramImage;
       if (diagramImage && diagramImage.length > 0) {
         const macroParamsSize = calculateDataSize(macroParams);
@@ -83,6 +84,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
         const totalSize = macroParamsSize + bodyDataSize;
 
         if (totalSize > sizeConfig.maxUncompressedSize) {
+          // Compress both base64 images if the total size is too large
           bodyDataToSave = await compressBase64Image(
             diagramImage, 
             sizeConfig.compressionQuality, 

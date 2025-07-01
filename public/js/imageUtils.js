@@ -20,7 +20,7 @@ export function compressBase64Image(base64String, quality = sizeConfig.compressi
       const img = new Image();
       
       const timeout = setTimeout(() => {
-        reject(new Error('Image compression timeout'));
+        reject(new Error('Image compression was aborted after 10 seconds. The input image may be too large or not in a valid base64 format'));
       }, 10000); 
       
       img.onload = function() {
