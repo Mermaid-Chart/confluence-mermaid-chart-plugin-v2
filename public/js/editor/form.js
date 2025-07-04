@@ -4,6 +4,7 @@ import htm from "https://esm.sh/htm";
 import { IMAGE_SIZES } from "/js/constatnts.js";
 import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
+import { compressBase64Image,sizeConfig, calculateDataSize } from "/js/imageUtils.js";
 
 const html = htm.bind(h);
 
@@ -62,15 +63,49 @@ export function Form({ mcAccessToken, user, onLogout }) {
       setinitialized(true);
     });
 
-    window.AP.events.on("dialog.submit", async () => {
-      const { diagramImage: _, ...saveData } = dataRef.current;
-      await window.AP.confluence.saveMacro(
-        saveData,
-        dataRef.current.diagramImage
-      );
+  window.AP.events.on("dialog.submit", async () => {
+    const { diagramImage, ...saveData } = dataRef.current;
+    const macroParams = {
+      documentID: saveData.documentID,
+      projectID: saveData.projectID,
+      major: saveData.major,
+      minor: saveData.minor,
+      caption: saveData.caption,
+      diagramCode: saveData.diagramCode,
+      size: saveData.size
+    };
+    
+    try {
+      // Both diagramImage and saveData.diagramCode contain base64-encoded image data
+      let bodyDataToSave = diagramImage;
+      if (diagramImage && diagramImage.length > 0) {
+        const macroParamsSize = calculateDataSize(macroParams);
+        const bodyDataSize = calculateDataSize(diagramImage);
+        const totalSize = macroParamsSize + bodyDataSize;
 
+        if (totalSize > sizeConfig.maxUncompressedSize) {
+          // Compress both base64 images if the total size is too large
+          bodyDataToSave = await compressBase64Image(
+            diagramImage, 
+            sizeConfig.compressionQuality, 
+            sizeConfig.compressionMaxWidth
+          ).catch(() => diagramImage);
+          
+          macroParams.diagramCode = await compressBase64Image(
+            saveData.diagramCode, 
+            sizeConfig.compressionQuality, 
+            sizeConfig.compressionMaxWidth
+          ).catch(() => saveData.diagramCode);
+        } 
+      }
+      
+      await window.AP.confluence.saveMacro(macroParams, bodyDataToSave);
       window.AP.confluence.closeMacroEditor();
-    });
+
+    } catch (error) {
+      console.error("The diagram is too large to save, Try simplifying your diagram or reducing its complexity");
+    }
+  });
 
     window.AP.dialog.disableCloseOnSubmit();
 
