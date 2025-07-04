@@ -33,7 +33,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
   const [data, setData] = useState({
     caption: "",
-    size: "small",
+    size: "medium",
   });
   const dataRef = useRef();
   useEffect(() => {
