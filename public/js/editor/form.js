@@ -26,6 +26,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
   const [iframeURL, setIframeURL] = useState("");
   const [initialized, setinitialized] = useState(false);
   const [location, setLocation] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const onOpenFrame = (url) => {
     setIframeURL(url);
@@ -64,6 +65,10 @@ export function Form({ mcAccessToken, user, onLogout }) {
     });
 
   window.AP.events.on("dialog.submit", async () => {
+    if (isSaving) return; 
+    
+    setIsSaving(true);
+    
     const { diagramImage, ...saveData } = dataRef.current;
     const macroParams = {
       documentID: saveData.documentID,
@@ -76,6 +81,10 @@ export function Form({ mcAccessToken, user, onLogout }) {
     };
     
     try {
+      if (window.AP.dialog.getButton) {
+        window.AP.dialog.getButton("submit").hide();
+      }
+      
       // Both diagramImage and saveData.diagramCode contain base64-encoded image data
       let bodyDataToSave = diagramImage;
       if (diagramImage && diagramImage.length > 0) {
@@ -100,10 +109,14 @@ export function Form({ mcAccessToken, user, onLogout }) {
       }
       
       await window.AP.confluence.saveMacro(macroParams, bodyDataToSave);
+      await new Promise(resolve => setTimeout(resolve, 800));
       window.AP.confluence.closeMacroEditor();
-
     } catch (error) {
       console.error("The diagram is too large to save, Try simplifying your diagram or reducing its complexity");
+      if (window.AP.dialog.getButton) {
+        window.AP.dialog.getButton("submit").show();
+      }
+      setIsSaving(false);
     }
   });
 
@@ -177,11 +190,16 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
   return html`
         <${Fragment}>
+            ${isSaving && html`
+              <div class="saving-indicator">
+                Saving diagram...
+              </div>
+            `}
             <${Header} user="${user}" onLogout="${onLogout}"/>
             <div class="wrapper">
                 <${Diagram} document=${data} onOpenFrame="${onOpenFrame}"
                             mcAccessToken="${mcAccessToken}"/>
-                <div id="form-container">
+                <div id="form-container" class="${isSaving ? 'saving' : ''}">
                     <div class="form-row">
                         <label class="label">Caption</label>
                         <div class="field">
@@ -189,6 +207,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
                                     type="text"
                                     name="caption"
                                     value="${data.caption}"
+                                    disabled="${isSaving}"
                                     onInput="${(e) =>
                                       setData((prev) => ({
                                         ...prev,
@@ -203,6 +222,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
                             <select
                                     name="size"
                                     value="${data.size}"
+                                    disabled="${isSaving}"
                                     onChange="${(e) =>
                                       setData((prev) => ({
                                         ...prev,
