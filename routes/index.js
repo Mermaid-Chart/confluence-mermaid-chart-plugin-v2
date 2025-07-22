@@ -7,10 +7,10 @@ export default function routes(app, addon) {
   app.post('/installed', async (req, res) => {
     try {
       const clientKey = req.body.clientKey;
-      const settings = await addon.settings.getClientInfo(clientKey) || {};
+      const settings = await addon.settings.get('clientInfo', clientKey) || {};
       settings.installedBy = req.body.installedBy;
       settings.installationId = req.body.installationId;
-      await addon.settings.saveInstallation(settings, clientKey);
+      await addon.settings.set('clientInfo', settings, clientKey);
       res.status(204).send();
     } catch (err) {
       console.error('Installation error:', err);
