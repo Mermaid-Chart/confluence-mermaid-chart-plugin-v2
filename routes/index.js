@@ -4,19 +4,7 @@ import {MermaidChart} from '../utils/MermaidChart.js';
 const MC_BASE_URL = process.env.MC_BASE_URL || "https://test.mermaidchart.com";
 
 export default function routes(app, addon) {
-  app.post('/installed', async (req, res) => {
-    try {
-      const clientKey = req.body.clientKey;
-      const settings = await addon.settings.getClientInfo(clientKey) || {};
-      settings.installedBy = req.body.installedBy;
-      settings.installationId = req.body.installationId;
-      await addon.settings.saveInstallation(settings, clientKey);
-      res.status(204).send();
-    } catch (err) {
-      console.error('Installation error:', err);
-      res.status(500).send(err);
-    }
-  });
+
 
   const mermaidAPI = new MermaidChart({
     baseURL: MC_BASE_URL,
