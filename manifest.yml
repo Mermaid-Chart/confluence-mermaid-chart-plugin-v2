@@ -1,7 +1,7 @@
 app:
-  id: ari:cloud:ecosystem::app/587ae2ce-1938-4fc3-afc3-26917db96e83
+  id: ari:cloud:ecosystem::app/f0772e01-be94-4e91-baab-fdb093af9198
   connect:
-    key: mermaid-chart-app
+    key: mermaid-chart-app-for-confluence
     remote: connect
     authentication: jwt
   runtime:

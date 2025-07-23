@@ -1,5 +1,5 @@
 {
-  "key": "mermaid-chart-app",
+  "key": "mermaid-chart-app-for-confluence",
   "name": "Mermaid chart application",
   "description": "Mermaid chart application",
   "//baseUrl": "{{localBaseUrl}}",
