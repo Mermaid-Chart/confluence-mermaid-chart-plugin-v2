@@ -13,6 +13,29 @@ export default function routes(app, addon) {
     addon,
   })
 
+  // Custom /installed handler for Forge compatibility
+  app.post("/installed", (req, res) => {
+    console.log("Received installation request:", req.headers, req.body);
+    
+    // Check if this is a Forge installation request
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      // This looks like a Forge installation request
+      console.log("Handling Forge installation request");
+      
+      // For Forge installations, we just need to acknowledge
+      // The actual authentication and data storage is handled by Forge
+      return res.status(200).json({
+        status: "installed",
+        message: "Forge app installation acknowledged"
+      });
+    }
+    
+    // If it's not a Forge request, pass to next middleware (Connect will handle it)
+    console.log("Passing to Connect middleware");
+    return res.status(400).json({ error: "Invalid installation request format" });
+  });
+
   app.get("/", (req, res) => {
     res.redirect("/atlassian-connect.json");
   });
@@ -26,7 +49,10 @@ export default function routes(app, addon) {
     try {
       access_token = await fetchToken(req.context.http, req.context.userAccountId)
       user = access_token ? await mermaidAPI.getUser(access_token) : undefined
-    } catch (e) {}
+    } catch (e) {
+      // Ignore token fetch errors, user will need to login
+      console.log("Token fetch failed:", e.message);
+    }
 
     const auth = user ? {} : await mermaidAPI.getAuthorizationData()
 
