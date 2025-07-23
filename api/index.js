@@ -134,6 +134,7 @@ if (devEnv) app.use(errorHandler());
 // Wire up routes
 routes(app, addon);
 
+// For Vercel serverless deployment, export as default
 export default app;
 
 function redactJwtTokens(req) {

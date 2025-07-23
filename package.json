@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node scripts/server.js",
     "watch-server": "nodemon -e js,hbs scripts/server.js",
-    "lint": "eslint app.js routes"
+    "lint": "eslint api routes"
   },
   "dependencies": {
     "@atlaskit/button": "^17.4.0",
