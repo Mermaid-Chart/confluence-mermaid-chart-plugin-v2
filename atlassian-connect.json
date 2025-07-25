@@ -34,8 +34,8 @@
         "bodyType": "plain-text",
         "editor": {
           "url": "/editor",
-          "width": "95%",
-          "height": "95%",
+          "width": "100%",
+          "height": "100%",
           "cacheable": false,
           "editTitle": {
             "value": "Edit diagram"
