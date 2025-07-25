@@ -22,7 +22,7 @@ function getLocationWithTimeout(timeout) {
   });
 }
 
-export function Form({ mcAccessToken, user, onLogout, isFullScreen }) {
+export function Form({ mcAccessToken, user, onLogout }) {
   const [iframeURL, setIframeURL] = useState("");
   const [initialized, setinitialized] = useState(false);
   const [location, setLocation] = useState("");
