@@ -52,6 +52,13 @@ iframe {
   justify-content: space-between;
   align-items: center;
 }
+.iframe-cancel {
+  background-color: #f4f5f7;
+  border-bottom: 1px solid #dfe1e6;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: flex-end;
+}
 
 .iframe-header .header-title {
   font-size: 18px;
@@ -278,4 +285,4 @@ iframe {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
+  

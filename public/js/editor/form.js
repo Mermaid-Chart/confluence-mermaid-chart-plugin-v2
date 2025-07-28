@@ -162,7 +162,7 @@ window.AP.confluence.getMacroBody((macroBody) => {
                 window.AP.confluence.closeMacroEditor();
               }
             }}">
-            Cancel and return to Confluence
+            Cancel 
           </button>
         </div>
         <iframe src="${iframeURL}" name="${JSON.stringify(iframeData)}" />
