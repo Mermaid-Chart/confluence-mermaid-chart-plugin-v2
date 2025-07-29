@@ -14,6 +14,15 @@ function App() {
         setAccessToken(token);
         setUser(user);
     }
+    
+    const onCancel = () => {
+        if (window.AP && window.AP.confluence) {
+            window.AP.confluence.closeMacroEditor();
+        } else if (window.CP) {
+            window.CP.cancel();
+        }
+    }
+    
     const onLogout = async () => {
         await fetch('/logout', {
             method: 'post',
@@ -28,7 +37,7 @@ function App() {
 
     if (!accessToken) {
         return html`
-            <${Login} onLogin="${onLogin}"/>
+            <${Login} onLogin="${onLogin}" onCancel="${onCancel}"/>
         `;
     }
 
