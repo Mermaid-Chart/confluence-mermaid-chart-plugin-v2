@@ -1,16 +1,71 @@
 #editor-content {
   height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  background-color: white;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background-color: white;
+}
+
+iframe {
+  background-color: white;
+  border: none;
+  width: 100%;
+  flex: 1;
+  border: none;
+  outline: none;
 }
 
 .error {
   color: red;
 }
 
-iframe {
+.iframe-container {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
-  border: none;
-  outline: none;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  background-color: #f4f5f7;
+}
+
+.iframe-header {
+  background-color: #f4f5f7;
+  border-bottom: 1px solid #dfe1e6;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.iframe-cancel {
+  background-color: #f4f5f7;
+  border-bottom: 1px solid #dfe1e6;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.iframe-header .header-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: #172b4d;
+  margin-left: 10px;
+  letter-spacing: 0.2px;
 }
 
 #header {
@@ -79,25 +134,61 @@ iframe {
   justify-content: center;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border-color);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 #diagram-container .diagram {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   display: flex;
   justify-content: center;
+  align-items: center;
+  padding: 16px;
+  min-height: 200px;
+  overflow: hidden;
+  background-color: white;
 }
 #diagram-container .diagram .image {
   display: flex;
   justify-content: center;
+  align-items: center;
+  max-width: 100%;
+  height: auto;
+  min-height: 150px;
 }
 #diagram-container .diagram .image img {
-  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
 }
 #diagram-container .select-buttons {
   display: flex;
   gap: 16px;
-  padding: 0 32px;
+  padding: 16px 32px;
   justify-content: center;
+}
+
+#diagram-container .select-buttons button {
+  padding: 8px 16px;
+  background-color: #0052CC;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+#diagram-container .select-buttons button:hover {
+  background-color: #0747A6;
+}
+
+#diagram-container .select-buttons button:focus {
+  outline: 2px solid #4C9AFF;
+  outline-offset: 2px;
 }
 
 #page-spinner {
@@ -123,8 +214,6 @@ iframe {
 #login-container img.logo {
   max-height: 50px;
 }
-#login-button {
-}
 
 .saving-indicator {
   position: fixed;
@@ -140,3 +229,60 @@ iframe {
   font-weight: bold;
 }
 
+.form-actions {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #dfe1e6;
+  width: 100%;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.submit-button, .cancel-button {
+  padding: 8px 16px;
+  border-radius: 3px;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+  min-width: 80px;
+  text-align: center;
+}
+
+.submit-button {
+  background-color: #0052CC;
+  color: white;
+  border: none;
+}
+
+.submit-button:hover {
+  background-color: #0747A6;
+}
+
+.submit-button:disabled {
+  background-color: #a5adba;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background-color: transparent;
+  color: #172b4d;
+  border: none;
+  font-weight: normal;
+  padding: 8px 12px;
+}
+
+.cancel-button:hover {
+  background-color: rgba(9, 30, 66, 0.08);
+}
+
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+  

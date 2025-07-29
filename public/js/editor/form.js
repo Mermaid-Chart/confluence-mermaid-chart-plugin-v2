@@ -27,45 +27,9 @@ export function Form({ mcAccessToken, user, onLogout }) {
   const [initialized, setinitialized] = useState(false);
   const [location, setLocation] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  const onOpenFrame = (url) => {
-    setIframeURL(url);
-  };
-
-  const [data, setData] = useState({
-    caption: "",
-    size: "medium",
-  });
-  const dataRef = useRef();
-  useEffect(() => {
-    dataRef.current = data;
-  }, [Object.values(data)]);
-
-  useEffect(() => {
-    if (!window.AP || !window.AP.confluence) {
-      return;
-    }
-    if (data.documentID && !iframeURL) {
-      // window.AP.dialog.getButton('submit').enable();
-      window.AP.dialog.getButton("submit").show();
-    } else {
-      // window.AP.dialog.getButton('submit').disable();
-      window.AP.dialog.getButton("submit").hide();
-    }
-  }, [data.documentID, iframeURL]);
-
-  useEffect(() => {
-    window.AP.confluence.getMacroBody((macroBody) => {
-      setData((data) => ({ ...data, diagramImage: macroBody }));
-    });
-
-    window.AP.confluence.getMacroData(({ __bodyContent: _, ...params }) => {
-      setData((data) => ({ ...data, ...params }));
-      setinitialized(true);
-    });
-
-  window.AP.events.on("dialog.submit", async () => {
-    if (isSaving) return; 
+  
+ const saveDiagram = async () => {
+    if (isSaving) return;
     
     setIsSaving(true);
     
@@ -118,7 +82,34 @@ export function Form({ mcAccessToken, user, onLogout }) {
       }
       setIsSaving(false);
     }
+  };
+  
+
+  const onOpenFrame = (url) => {
+    setIframeURL(url);
+  };
+
+  const [data, setData] = useState({
+    caption: "",
+    size: "medium",
   });
+  const dataRef = useRef();
+  useEffect(() => {
+    dataRef.current = data;
+  }, [Object.values(data)]);
+
+
+  useEffect(() => {
+window.AP.confluence.getMacroBody((macroBody) => {
+      setData((data) => ({ ...data, diagramImage: macroBody }));
+    });
+
+    window.AP.confluence.getMacroData(({ __bodyContent: _, ...params }) => {
+      setData((data) => ({ ...data, ...params }));
+      setinitialized(true);
+    });
+
+  window.AP.events.on("dialog.submit", saveDiagram);
 
     window.AP.dialog.disableCloseOnSubmit();
 
@@ -160,7 +151,22 @@ export function Form({ mcAccessToken, user, onLogout }) {
       document: data,
     };
     return html`
-      <iframe src="${iframeURL}" name="${JSON.stringify(iframeData)}" />
+      <div class="iframe-container">
+        <div class="iframe-header">
+          <div class="header-title">Insert diagram</div>
+          <button 
+            type="button" 
+            class="cancel-button"
+            onClick="${() => {
+              if (window.AP && window.AP.confluence) {
+                window.AP.confluence.closeMacroEditor();
+              }
+            }}">
+            Cancel 
+          </button>
+        </div>
+        <iframe src="${iframeURL}" name="${JSON.stringify(iframeData)}" />
+      </div>
     `;
   }
 
@@ -235,8 +241,29 @@ export function Form({ mcAccessToken, user, onLogout }) {
                                   </option>`
                                 )}
                             </select>
+        
                         </div>
-                    </div>
+                </div>
+                <div class="form-actions">
+                  <div class="button-group">
+                    <button type="button" 
+                            disabled="${isSaving}" 
+                            onClick="${() => {
+                              if (window.AP && window.AP.confluence) {
+                                window.AP.confluence.closeMacroEditor();
+                              }
+                            }}"
+                            class="cancel-button">
+                        Cancel
+                    </button>
+                    <button type="button" 
+                            disabled="${isSaving}" 
+                            onClick="${saveDiagram}"
+                            class="submit-button">
+                        Insert diagram
+                    </button>
+                  </div>
+                </div>
                 </div>
             </div>
         </Fragment>
