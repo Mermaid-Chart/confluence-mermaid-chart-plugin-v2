@@ -85,7 +85,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
         window.AP.dialog.getButton("submit").hide();
       }
       
-      // Both diagramImage and saveData.diagramCode contain base64-encoded image data
+      // Both diagramImage and saveData.diagramCode contain base64-encoded image  data
       let bodyDataToSave = diagramImage;
       if (diagramImage && diagramImage.length > 0) {
         const macroParamsSize = calculateDataSize(macroParams);
