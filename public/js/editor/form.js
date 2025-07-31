@@ -22,28 +22,11 @@ function getLocationWithTimeout(timeout) {
   });
 }
 
-export function Form({ mcAccessToken, user, onLogout, descriptor: descriptorProp }) {
- 
+export function Form({ mcAccessToken, user, onLogout }) {
   const [iframeURL, setIframeURL] = useState("");
   const [initialized, setinitialized] = useState(false);
   const [location, setLocation] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [descriptor, setDescriptor] = useState(descriptorProp || window.descriptorData || null);
-  
- 
-  const shouldHideButtons = () => {
-    if (!descriptor) return false;
-    
-    try {
-      const editorSettings = descriptor.modules?.dynamicContentMacros?.[0]?.editor;
-      return editorSettings?.width === "95%" && editorSettings?.height === "95%";
-    } catch (error) {
-      console.error("Error checking button visibility:", error);
-      return false;
-    }
-  };
-  
-  const buttonsHidden = shouldHideButtons();
   
  const saveDiagram = async () => {
     if (isSaving) return;
@@ -169,7 +152,6 @@ window.AP.confluence.getMacroBody((macroBody) => {
     };
     return html`
       <div class="iframe-container">
-        ${!buttonsHidden && html`
         <div class="iframe-header">
           <div class="header-title">Insert diagram</div>
           <button 
@@ -183,7 +165,6 @@ window.AP.confluence.getMacroBody((macroBody) => {
             Cancel 
           </button>
         </div>
-        `}
         <iframe src="${iframeURL}" name="${JSON.stringify(iframeData)}" />
       </div>
     `;
@@ -263,7 +244,6 @@ window.AP.confluence.getMacroBody((macroBody) => {
         
                         </div>
                 </div>
-               ${!buttonsHidden && html`
                 <div class="form-actions">
                   <div class="button-group">
                     <button type="button" 
@@ -284,7 +264,6 @@ window.AP.confluence.getMacroBody((macroBody) => {
                     </button>
                   </div>
                 </div>
-                `}
                 </div>
             </div>
         </Fragment>
