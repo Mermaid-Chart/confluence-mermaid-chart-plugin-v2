@@ -29,16 +29,19 @@ export default function routes(app, addon) {
     } catch (e) {}
 
     const auth = user ? {} : await mermaidAPI.getAuthorizationData()
-
+     const descriptor = addon.descriptor;
     res.render("editor.hbs", {
       MC_BASE_URL: MC_BASE_URL,
       mcAccessToken: user ? access_token : '',
       loginURL: auth.url,
       loginState: auth.state,
-      user: user ? JSON.stringify(user) : 'null'
+      user: user ? JSON.stringify(user) : 'null',
+      descriptor: JSON.stringify(descriptor)
+
+
     });
   });
-
+  
   app.get("/check_token", addon.checkValidToken(), async (req, res) => {
     if (!req.query.state) {
       return res.status(404).end();
@@ -76,6 +79,6 @@ export default function routes(app, addon) {
     res.render("authCallback.hbs", {
       errorMessage,
     })
-
+  
   })
 }

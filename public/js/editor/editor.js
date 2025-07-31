@@ -6,8 +6,12 @@ import {Form} from './form.js';
 
 const html = htm.bind(h);
 
+if (typeof descriptorData !== 'undefined') {
+  window.descriptorData = descriptorData;
+}
+
 function App() {
-    const [accessToken, setAccessToken] = useState(mcAccessToken);
+        const [accessToken, setAccessToken] = useState(mcAccessToken);
     const [user, setUser] = useState(loggedUser);
 
     const onLogin = (token, user) => {
@@ -43,7 +47,7 @@ function App() {
 
     return html`
         <${Form} user="${user}" onLogout="${onLogout}"
-                 mcAccessToken="${accessToken}"/>
+                 mcAccessToken="${accessToken}" descriptor="${window.descriptorData || null}"/>
     `;
 }
 
