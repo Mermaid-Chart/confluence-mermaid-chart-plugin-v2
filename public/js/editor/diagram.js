@@ -19,7 +19,7 @@ export function Diagram({document, onOpenFrame, mcAccessToken}) {
 
     const onEdit = () => {
         onOpenFrame(buildUrl(
-            `/app/projects/${document.projectID}/diagrams/${document.documentID}/version/v.${document.major}.${document.minor}/edit`));
+            `/app/projects/${document.projectID}/diagrams/${document.documentID}/version/v${document.major}.${document.minor}/edit`));
         return false;
     };
 
