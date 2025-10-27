@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import {getEncodedSHA256Hash} from './index.js';
 
 const defaultBaseURL = 'https://test.mermaidchart.com';
+console.log('Using default Mermaid Chart base URL:', defaultBaseURL);
 
 const CLIENT_KEY = 'all';
 
