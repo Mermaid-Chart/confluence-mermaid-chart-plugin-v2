@@ -169,13 +169,39 @@ export default function routes(app, addon) {
   });
 
   app.get("/editor", addon.authenticate(), async (req, res) => {
+    console.log('\n=== EDITOR ROUTE ===');
+    console.log('User account ID:', req.context.userAccountId);
+    console.log('Client key:', req.context.clientKey);
+    
     let access_token, user;
     try {
+      console.log('Attempting to fetch existing token...');
       access_token = await fetchToken(req.context.http, req.context.userAccountId)
-      user = access_token ? await mermaidAPI.getUser(access_token) : undefined
-    } catch (e) {}
+      console.log('Access token retrieved:', !!access_token);
+      
+      if (access_token) {
+        console.log('Attempting to get user with token...');
+        user = await mermaidAPI.getUser(access_token);
+        console.log('User retrieved:', !!user);
+        if (user) {
+          console.log('User details:', JSON.stringify(user, null, 2));
+        }
+      } else {
+        console.log('No access token found');
+      }
+    } catch (e) {
+      console.error('Error in editor token/user flow:', e);
+    }
 
     const auth = user ? {} : await mermaidAPI.getAuthorizationData()
+    
+    console.log('Auth data needed:', !user);
+    if (auth.url) {
+      console.log('Login URL generated:', auth.url);
+      console.log('Login state:', auth.state);
+    }
+
+    console.log('==================\n');
 
     res.render("editor.hbs", {
       MC_BASE_URL: MC_BASE_URL,
@@ -187,28 +213,58 @@ export default function routes(app, addon) {
   });
 
   app.get("/check_token", addon.checkValidToken(), async (req, res) => {
+    console.log('\n=== CHECK TOKEN ===');
+    console.log('Query params:', req.query);
+    console.log('User account ID:', req.context.userAccountId);
+    
     if (!req.query.state) {
+      console.log('No state parameter provided');
+      console.log('==================\n');
       return res.status(404).end();
     }
+    
+    console.log('Getting token for state:', req.query.state);
     const token = await mermaidAPI.getToken(req.query.state);
     if (!token) {
+      console.log('No token found for state');
+      console.log('==================\n');
       return res.status(404).end();
     }
+    
+    console.log('Token retrieved, length:', token.length);
     await mermaidAPI.delToken(req.query.state);
+    console.log('State token deleted');
 
+    console.log('Getting user info with token...');
     const user = await mermaidAPI.getUser(token)
+    console.log('User retrieved:', !!user);
 
     try {
+      console.log('Saving token to Confluence user properties...');
       await saveToken(req.context.http, req.context.userAccountId, token)
+      console.log('Token saved successfully');
+      console.log('==================\n');
       return res.json({ token, user }).end();
     } catch (e) {
-      console.error(e)
+      console.error('Error saving token:', e)
+      console.log('==================\n');
       res.status(503).end();
     }
   })
 
   app.post("/logout", addon.checkValidToken(), async (req, res) => {
-    await saveToken(req.context.http, req.context.userAccountId, '')
+    console.log('\n=== LOGOUT ===');
+    console.log('User account ID:', req.context.userAccountId);
+    console.log('Clearing token...');
+    
+    try {
+      await saveToken(req.context.http, req.context.userAccountId, '')
+      console.log('Token cleared successfully');
+    } catch (e) {
+      console.error('Error clearing token:', e);
+    }
+    
+    console.log('==============\n');
     res.end();
   })
 
