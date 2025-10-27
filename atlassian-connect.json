@@ -3,7 +3,7 @@
   "name": "Mermaid chart application",
   "description": "Mermaid chart application",
   "//baseUrl": "{{localBaseUrl}}",
-  "baseUrl": "https://confluence-mermaid-chart-plugin-git-add-logs-to-89da3a-mc-prod.vercel.app",
+  "baseUrl": "https://confluencetest.mermaidchart.com",
   "authentication": {
     "type": "jwt"
   },
