@@ -8,7 +8,7 @@ app:
     name: nodejs20.x
 remotes:
   - key: connect
-    baseUrl: https://confluencetest.mermaidchart.com
+    baseUrl: https://confluence-mermaid-chart-plugin-git-add-logs-to-89da3a-mc-prod.vercel.app
 connectModules:
   confluence:lifecycle:
     - key: lifecycle-events
