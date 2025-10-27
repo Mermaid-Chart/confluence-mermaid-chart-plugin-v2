@@ -162,45 +162,16 @@ class MermaidChart {
     }
 
     async getUser(accessToken) {
-        console.log('\n=== MERMAID GET USER ===');
-        console.log('Base URL:', this.baseURL);
-        console.log('Access token provided:', !!accessToken);
-        console.log('Token length:', accessToken?.length || 0);
-        
-        const url = `${this.baseURL}${this.URLS.rest.users.self}`;
-        console.log('Request URL:', url);
-        
-        try {
-            const response = await fetch(url, {
+        const response = await fetch(
+            `${this.baseURL}${this.URLS.rest.users.self}`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
             });
-            
-            console.log('Response status:', response.status);
-            console.log('Response OK:', response.ok);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.log('Error response:', errorText);
-                console.log('=====================\n');
-                throw new OAuthError("Invalid token to get user info");
-            }
-            
-            const userData = await response.json();
-            console.log('User data retrieved:', !!userData);
-            if (userData) {
-                console.log('User ID:', userData.id);
-                console.log('User email:', userData.emailAddress);
-            }
-            console.log('=====================\n');
-            
-            return userData;
-        } catch (error) {
-            console.error('Error in getUser:', error);
-            console.log('=====================\n');
-            throw error;
+        if (!response.ok) {
+            throw new OAuthError("Invalid token to get user info");
         }
+        return (await response.json());
     }
 
     getEditURL(
