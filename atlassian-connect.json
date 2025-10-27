@@ -5,7 +5,7 @@
   "//baseUrl": "{{localBaseUrl}}",
   "baseUrl": "https://confluence-mermaid-chart-plugin-git-migrate-conf-60f875-mc-prod.vercel.app",
   "authentication": {
-    "type": "jwt"
+    "type": "jwt-asymmetric"
   },
   "lifecycle": {
     "installed": "/installed"

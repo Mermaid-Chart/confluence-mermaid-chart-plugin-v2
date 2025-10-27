@@ -3,7 +3,7 @@ app:
   connect:
     key: mermaid-chart-app
     remote: connect
-    authentication: jwt
+    authentication: jwt-asymmetric
   runtime:
     name: nodejs20.x
 remotes:
