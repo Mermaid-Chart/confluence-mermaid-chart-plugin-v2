@@ -87,6 +87,7 @@ export default function routes(app, addon) {
         productType: req.body.productType,
         description: req.body.description,
         eventType: req.body.eventType,
+        oauthClientId: req.body.oauthClientId,
         installedAt: new Date().toISOString()
       };
       
