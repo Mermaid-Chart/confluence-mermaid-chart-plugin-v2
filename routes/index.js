@@ -60,7 +60,6 @@ export default function routes(app, addon) {
             });
           });
       } else if (store.set) {
-        // Fallback to generic set method
         store.set('clientInfo', installationData, req.body.clientKey)
           .then(() => {
             res.status(204).end();
