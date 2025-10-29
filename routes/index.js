@@ -13,6 +13,79 @@ export default function routes(app, addon) {
     addon,
   })
 
+  app.post('/installed', (req, res) => {
+    try {
+      if (!addon.settings && !addon.store) {
+        console.error('No store available - neither addon.settings nor addon.store exists');
+        return res.status(500).json({ 
+          error: 'Store not initialized', 
+          details: 'Neither addon.settings nor addon.store is available' 
+        });
+      }
+      if (!req.body.clientKey) {
+        console.error('Missing clientKey in installation payload');
+        return res.status(400).json({ error: 'Missing clientKey' });
+      }
+
+      if (!req.body.sharedSecret) {
+        console.error('Missing sharedSecret in installation payload');
+        return res.status(400).json({ error: 'Missing sharedSecret' });
+      }
+
+      const installationData = {
+        clientKey: req.body.clientKey,
+        publicKey: req.body.publicKey,
+        sharedSecret: req.body.sharedSecret,
+        serverVersion: req.body.serverVersion,
+        pluginsVersion: req.body.pluginsVersion,
+        baseUrl: req.body.baseUrl,
+        productType: req.body.productType,
+        description: req.body.description,
+        eventType: req.body.eventType,
+        oauthClientId: req.body.oauthClientId,
+        installedAt: new Date().toISOString()
+      };
+      const store = addon.settings || addon.store;
+      if (store.saveInstallation) {
+        store.saveInstallation(installationData, req.body.clientKey)
+          .then(() => {
+            res.status(204).end();
+          })
+          .catch(storeError => {
+            console.error('Error storing installation data via saveInstallation:', storeError);
+            console.error('Store error stack:', storeError.stack);
+            res.status(500).json({ 
+              error: 'Failed to store installation data', 
+              details: storeError.message 
+            });
+          });
+      } else if (store.set) {
+        store.set('clientInfo', installationData, req.body.clientKey)
+          .then(() => {
+            res.status(204).end();
+          })
+          .catch(storeError => {
+            console.error('Error storing installation data via set:', storeError);
+            console.error('Store error stack:', storeError.stack);
+            res.status(500).json({ 
+              error: 'Failed to store installation data', 
+              details: storeError.message 
+            });
+          });
+      } else {
+        console.error('Store has no saveInstallation or set method');
+        res.status(500).json({ 
+          error: 'Store has no available methods', 
+          details: 'Neither saveInstallation nor set method found' 
+        });
+      }
+
+    } catch (error) {
+      console.error('Installation handler exception:', error);
+      console.error('Exception stack:', error.stack);
+      res.status(500).json({ error: 'Installation exception', details: error.message });
+    }
+  });
   app.get("/", (req, res) => {
     res.redirect("/atlassian-connect.json");
   });
