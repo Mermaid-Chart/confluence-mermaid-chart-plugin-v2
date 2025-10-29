@@ -1,5 +1,5 @@
 app:
-  id: ari:cloud:ecosystem::app/e9fe9309-61d4-4ebd-ba86-3b358c41ca1b
+  id: ari:cloud:ecosystem::app/d936630d-1dc6-494c-8541-6877598e59c1
   connect:
     key: mermaid-chart-app
     remote: connect
@@ -8,7 +8,7 @@ app:
     name: nodejs20.x
 remotes:
   - key: connect
-    baseUrl: https://confluencetest.mermaidchart.com
+    baseUrl: https://confluencestage.mermaidchart.com
 connectModules:
   confluence:lifecycle:
     - key: lifecycle-events
