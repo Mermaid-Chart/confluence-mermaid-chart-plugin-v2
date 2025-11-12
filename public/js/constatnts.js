@@ -1,8 +1,8 @@
 
 export const IMAGE_SIZES = {
-  xsmall: { width: 100 },
-  small: {width: 200},
-  medium: {width: 400},
-  large: {width: 600},
-  xlarge: {width: 800},
+  "Extra Small": { width: 100 },
+  "Small": {width: 200},
+  "Medium": {width: 400},
+  "Large": {width: 600},
+  "Extra Large": {width: 800},
 }
