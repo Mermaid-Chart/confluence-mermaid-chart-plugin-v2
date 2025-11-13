@@ -126,6 +126,15 @@ window.AP.confluence.getMacroBody((macroBody) => {
 
     window.onmessage = function (e) {
       const action = e.data.action;
+      const messageType = e.data.type;
+      if (messageType === 'mermaid-chart-confluence-back' && e.data.action === 'navigateBack') {
+        setIframeURL("");  
+        if (window.AP && window.AP.confluence) {
+          window.AP.confluence.closeMacroEditor();
+        }
+        return;
+      }
+      
       switch (action) {
         case "cancel":
           setIframeURL("");
