@@ -269,7 +269,7 @@
       <div class="flex items-center gap-2  gap-[8px]">
         <div class="flex items-center gap-2">
           <img 
-            src="https://static.mermaidchart.dev/assets/mermaid-icon.svg" 
+            src="/icon_80x80.png" 
             alt="Mermaid icon"
             style="width: 32px; height: 32px; padding: 12px;"
           />

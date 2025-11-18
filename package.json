@@ -32,7 +32,6 @@
     "@mermaid-js/layout-elk": "^0.1.9",
     "@mermaid-js/mermaid-zenuml": "^0.2.2",
     "@upstash/redis": "^1.28.4",
-    "@atlassian/atlassian-connect-express": "^11.5.3",
     "body-parser": "^1.19.0",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.5",
@@ -47,6 +46,8 @@
     "node-fetch": "^3.3.2",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "sqlite3": "^5.1.7",
     "uuid": "^9.0.1"
   },
@@ -73,5 +74,11 @@
     "svelte": "^4.2.8",
     "tailwindcss": "^4.1.12",
     "unplugin-icons": "^0.22.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0"
+    }
   }
 }
