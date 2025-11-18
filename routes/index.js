@@ -1,7 +1,7 @@
 import {fetchToken, saveToken} from '../utils/index.js';
 import {MermaidChart} from '../utils/MermaidChart.js';
 
-const MC_BASE_URL ="https://collab-git-confluence-ui-figma-mc-prod.vercel.app";
+const MC_BASE_URL = process.env.MC_BASE_URL || "https://test.mermaidchart.com";
 
 export default function routes(app, addon) {
 
