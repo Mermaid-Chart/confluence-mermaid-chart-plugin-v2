@@ -2,7 +2,7 @@ import {v4 as uuid} from 'uuid';
 import fetch from 'node-fetch';
 import {getEncodedSHA256Hash} from './index.js';
 
-const defaultBaseURL = 'https://collab-git-confluence-ui-figma-mc-prod.vercel.app';
+const defaultBaseURL = 'https://test.mermaidchart.com';
 
 const CLIENT_KEY = 'all';
 
