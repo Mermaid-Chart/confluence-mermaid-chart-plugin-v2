@@ -16,7 +16,7 @@
   "dependencies": {
     "@atlaskit/button": "^17.4.0",
     "@atlaskit/section-message": "^6.4.19",
-    "@atlassian/atlassian-connect-express": "^11.9.0",
+    "atlassian-connect-express": "^10.0.2",
     "@fontsource/recursive": "^5.2.8",
     "@fortawesome/fontawesome-free": "6.7.2",
     "@iconify-json/fa6-brands": "^1.2.0",
