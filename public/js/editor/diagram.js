@@ -17,15 +17,10 @@ export function Diagram({document, onOpenFrame, mcAccessToken}) {
         return `${MC_BASE_URL}/oauth/frame/?token=${mcAccessToken}&redirect=${pathname}`;
     };
 
-    const onEdit = () => {
-        onOpenFrame(buildUrl(
-            `/app/projects/${document.projectID}/diagrams/${document.documentID}/version/v.${document.major}.${document.minor}/edit`));
-        return false;
-    };
 
     const onSelect = () => {
         onOpenFrame(buildUrl(
-            `/app/plugins/confluence/select`))
+            `/app/plugins/confluence/select?pluginSource=confluence`))
         return false;
     };
 
@@ -40,12 +35,7 @@ export function Diagram({document, onOpenFrame, mcAccessToken}) {
             <div class="diagram">
                 ${image}
             </div>
-            <div class="select-buttons">
-                <button type="button" onClick="${onEdit}">Edit current diagram</button>
-                <button type="button" onClick="${onSelect}">
-                    Select different diagram
-                </button>
-            </div>
+           
         </div>
     `;
 }

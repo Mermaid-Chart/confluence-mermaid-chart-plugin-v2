@@ -25,14 +25,13 @@ function App() {
     
     const onLogout = async () => {
         await fetch('/logout', {
-            method: 'post',
-            headers: {
-                Authorization: `JWT ${JWTToken}`,
-            },
-        });
+                method: 'post',
+                headers: {
+                    Authorization: `JWT ${JWTToken}`,
+                },
+            });
         setAccessToken(undefined)
         setUser(null)
-        window.location.reload();
     }
 
     if (!accessToken) {
