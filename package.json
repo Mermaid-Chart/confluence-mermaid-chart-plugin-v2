@@ -16,6 +16,7 @@
   "dependencies": {
     "@atlaskit/button": "^17.4.0",
     "@atlaskit/section-message": "^6.4.19",
+    "@atlassian/atlassian-connect-express": "^11.9.0",
     "@fontsource/recursive": "^5.2.8",
     "@fortawesome/fontawesome-free": "6.7.2",
     "@iconify-json/fa6-brands": "^1.2.0",
@@ -75,10 +76,9 @@
     "tailwindcss": "^4.1.12",
     "unplugin-icons": "^0.22.0"
   },
-  "pnpm": {
-    "overrides": {
-      "react": "^18.2.0",
-      "react-dom": "^18.2.0"
-    }
+  "overrides": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@mermaid-chart/mermaid": "11.12.1-b.3"
   }
 }
