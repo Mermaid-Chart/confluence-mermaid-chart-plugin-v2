@@ -11,7 +11,7 @@ import errorHandler from "errorhandler";
 import morgan from "morgan";
 
 // atlassian-connect-express also provides a middleware
-import ace from "@atlassian/atlassian-connect-express";
+import ace from "atlassian-connect-express";
 
 // Use Handlebars as view engine:
 // https://npmjs.org/package/express-hbs
