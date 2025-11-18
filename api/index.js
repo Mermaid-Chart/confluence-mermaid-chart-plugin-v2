@@ -11,7 +11,7 @@ import errorHandler from "errorhandler";
 import morgan from "morgan";
 
 // atlassian-connect-express also provides a middleware
-import ace from "atlassian-connect-express";
+import ace from "@atlassian/atlassian-connect-express";
 
 // Use Handlebars as view engine:
 // https://npmjs.org/package/express-hbs
@@ -123,6 +123,10 @@ app.use(addon.middleware());
 // Mount the static files directory
 const staticDir = path.join(process.cwd(), "public");
 app.use(express.static(staticDir));
+
+// Mount the dist directory for Svelte build output
+const distDir = path.join(process.cwd(), "dist");
+app.use('/dist', express.static(distDir));
 
 // Atlassian security policy requirements
 // http://go.atlassian.com/security-requirements-for-cloud-apps
