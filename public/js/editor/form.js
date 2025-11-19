@@ -28,6 +28,10 @@ export function Form({ mcAccessToken, user, onLogout }) {
   const [location, setLocation] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   
+  const buildUrl = (pathname) => {
+    return `${MC_BASE_URL}/oauth/frame/?token=${mcAccessToken}&redirect=${pathname}`;
+  };
+
  const saveDiagram = async () => {
     if (isSaving) return;
     
@@ -91,7 +95,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
   const [data, setData] = useState({
     caption: "",
-    size: "medium",
+    size: "Medium",
   });
   const dataRef = useRef();
   useEffect(() => {
@@ -107,6 +111,13 @@ window.AP.confluence.getMacroBody((macroBody) => {
     window.AP.confluence.getMacroData(({ __bodyContent: _, ...params }) => {
       setData((data) => ({ ...data, ...params }));
       setinitialized(true);
+      
+      if (params.documentID) {
+        const editUrl = buildUrl(
+          `/app/projects/${params.projectID}/diagrams/${params.documentID}/version/v${params.major}.${params.minor}/edit?pluginSource=confluence`
+        );
+        setIframeURL(editUrl);
+      }
     });
 
   window.AP.events.on("dialog.submit", saveDiagram);
@@ -115,6 +126,15 @@ window.AP.confluence.getMacroBody((macroBody) => {
 
     window.onmessage = function (e) {
       const action = e.data.action;
+      const messageType = e.data.type;
+      if (messageType === 'mermaid-chart-confluence-back' && e.data.action === 'navigateBack') {
+        setIframeURL("");  
+        if (window.AP && window.AP.confluence) {
+          window.AP.confluence.closeMacroEditor();
+        }
+        return;
+      }
+      
       switch (action) {
         case "cancel":
           setIframeURL("");
@@ -126,8 +146,17 @@ window.AP.confluence.getMacroBody((macroBody) => {
           break;
 
         case "save":
-          setData((prev) => ({ ...prev, ...e.data.data }));
-          setIframeURL("");
+          const saveDataWithDefaults = {
+            caption: e.data.data.caption || "",
+            size: e.data.data.size || "Medium",
+            ...e.data.data
+          };
+          setData((prev) => ({ ...prev, ...saveDataWithDefaults }));
+          setIsSaving(true);
+          setTimeout(() => {
+            saveDiagram();
+            setIframeURL(""); 
+          }, 50);
           break;
       }
     };
@@ -152,19 +181,7 @@ window.AP.confluence.getMacroBody((macroBody) => {
     };
     return html`
       <div class="iframe-container">
-        <div class="iframe-header">
-          <div class="header-title">Insert diagram</div>
-          <button 
-            type="button" 
-            class="cancel-button"
-            onClick="${() => {
-              if (window.AP && window.AP.confluence) {
-                window.AP.confluence.closeMacroEditor();
-              }
-            }}">
-            Cancel 
-          </button>
-        </div>
+
         <iframe src="${iframeURL}" name="${JSON.stringify(iframeData)}" />
       </div>
     `;
@@ -205,66 +222,6 @@ window.AP.confluence.getMacroBody((macroBody) => {
             <div class="wrapper">
                 <${Diagram} document=${data} onOpenFrame="${onOpenFrame}"
                             mcAccessToken="${mcAccessToken}"/>
-                <div id="form-container" class="${isSaving ? 'saving' : ''}">
-                    <div class="form-row">
-                        <label class="label">Caption</label>
-                        <div class="field">
-                            <input
-                                    type="text"
-                                    name="caption"
-                                    value="${data.caption}"
-                                    disabled="${isSaving}"
-                                    onInput="${(e) =>
-                                      setData((prev) => ({
-                                        ...prev,
-                                        caption: e.target.value,
-                                      }))}"
-                            />
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <label class="label">Diagram size</label>
-                        <div class="field">
-                            <select
-                                    name="size"
-                                    value="${data.size}"
-                                    disabled="${isSaving}"
-                                    onChange="${(e) =>
-                                      setData((prev) => ({
-                                        ...prev,
-                                        size: e.currentTarget.value,
-                                      }))}"
-                            >
-                                ${Object.keys(IMAGE_SIZES).map(
-                                  (s) => html` <option name="${s}">
-                                    ${s}
-                                  </option>`
-                                )}
-                            </select>
-        
-                        </div>
-                </div>
-                <div class="form-actions">
-                  <div class="button-group">
-                    <button type="button" 
-                            disabled="${isSaving}" 
-                            onClick="${() => {
-                              if (window.AP && window.AP.confluence) {
-                                window.AP.confluence.closeMacroEditor();
-                              }
-                            }}"
-                            class="cancel-button">
-                        Cancel
-                    </button>
-                    <button type="button" 
-                            disabled="${isSaving}" 
-                            onClick="${saveDiagram}"
-                            class="submit-button">
-                        Insert diagram
-                    </button>
-                  </div>
-                </div>
-                </div>
             </div>
         </Fragment>
     `;
