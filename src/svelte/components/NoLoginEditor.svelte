@@ -9,6 +9,7 @@
   import Select from './Select.svelte';
   import CodeSvgIcon from './CodeSvgIcon.svelte';
   import PaletteIcon from '~icons/material-symbols/palette-outline';
+   import layouts from '@mermaid-chart/layout-elk';
 
   export const onCancel = () => {};
   export let existingDiagramData = null;
@@ -26,7 +27,6 @@
   let renderError = null; 
   let isDataLoaded = !!existingDiagramData?.diagramCode;
 
-  let editorMode = 'code';
   let editorComponent;
 
   let samplePanelOpen = true;
@@ -49,19 +49,6 @@
   let themeDropdownPosition = { top: '120px', right: 'calc(70% + 20px)' };
 
   const dispatch = createEventDispatcher();
-
-  const editorTabs = [
-    {
-      id: 'code',
-      title: "",
-      icon: ""
-    },
-    
-  ];
-
-  const tabSelectHandler = (tab) => {
-    editorMode = tab.id;
-  };
   export async function initializeMermaid() {
       try {
           await mermaidModule.registerLayoutLoaders(layouts);
@@ -232,7 +219,6 @@
   function loadSampleDiagram(sampleCode) {
     code = sampleCode;
     isDataLoaded = true;
-    console.log(`Loaded sample diagram`);
   }
 
   const sizeOptions = [
@@ -350,8 +336,6 @@
             title="Code"
             isOpen={true}
             isClosable={false}
-            tabs={editorTabs}
-            activeTabID={editorMode}
             icon={CodeSvgIcon}
           >
             <div slot="actions" class="relative">

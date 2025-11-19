@@ -6,10 +6,6 @@
   export let value = '';
   export let error = null; 
 
-  $: if (error) {
-    console.log('Editor component received error:', error);
-  }
-
   let editorComponent;
 
   export const setValue = (newValue) => {

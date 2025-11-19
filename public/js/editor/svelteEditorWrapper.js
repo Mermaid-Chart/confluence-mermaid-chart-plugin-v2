@@ -26,8 +26,6 @@ export function SvelteEditorWrapper({
               ...props
             }
           });
-
-          console.log('Svelte NoLoginEditor mounted successfully');
         }
       } catch (error) {
         console.error('Failed to load or mount Svelte component:', error);

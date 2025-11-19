@@ -10,10 +10,7 @@
   }
 
   const toggleTabs = (tab) => {
-    return (event) => {
-      event.stopPropagation();
-      onselect?.(tab);
-    };
+    onselect?.(tab);
   };
 </script>
 
@@ -25,7 +22,12 @@
       tabindex="0"
       class="text-sm font-normal cursor-pointer text-[var(--Color-Deep-Purple-800)]"
       on:click={() => toggleTabs(tab)}
-      on:keypress={() => toggleTabs(tab)}
+      on:keydown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          toggleTabs(tab);
+        }
+      }}
     >
       {#if tab.icon}
         <svelte:component this={tab.icon} class="inline h-4 w-4 mr-1" />

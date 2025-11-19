@@ -66,8 +66,6 @@
           theme: theme || 'default',
           fontFamily: 'Recursive, sans-serif'
         });
-        
-        console.log('Mermaid View component initialized successfully with icon packs');
       } catch (error) {
         console.error('Error initializing Mermaid in View component:', error);
       }
@@ -101,7 +99,6 @@
       error = true;
       svg = '';
       errorMessage = err.message || err.toString();
-      console.log('Passing error to parent:', errorMessage); // Debug log
       onError(errorMessage); 
     } finally {
       isRendering = false;
@@ -137,7 +134,12 @@
         {@html lastValidSvg}
       </div>
     {:else if error}
-     <div class="flex h-full items-center justify-center" style="color: {isDarkTheme ? '#ffffff' : '#6b7280'}"></div>
+      <div class="flex h-full items-center justify-center" style="color: {isDarkTheme ? '#ffffff' : '#6b7280'}">
+        <div class="text-center">
+          <p class="text-sm">Diagram rendering failed</p>
+          <p class="text-xs mt-1 opacity-70">Check your Mermaid syntax</p>
+        </div>
+      </div>
     {:else if svg}
       <div class="flex h-full items-center justify-center p-4 exclude-global">
         {@html svg}

@@ -55,7 +55,7 @@ export function Login({onLogin, onCancel, onNoLoginClick, onOpenDiagramSelector}
   return html`
     <div class="iframe-container">
       <div class="iframe-cancel">
-        <button type="button" class="cancel-button" onClick="${onCancelClick}">
+        <button type="button" class="cancel-button" onClick=${onCancelClick}>
           Cancel
         </button>
       </div>
@@ -69,7 +69,7 @@ export function Login({onLogin, onCancel, onNoLoginClick, onOpenDiagramSelector}
             <div class="chart-option-column">
               <h3>Continue with Mermaid Chart</h3>
               <p>Access your recent and shared diagrams, keep version history, and sync changes across your team.</p>
-              <button id="login-button" class="primary-button" onClick="${onLoginClick}">
+              <button id="login-button" class="primary-button" onClick=${onLoginClick}>
                 Connect to Mermaid Chart
               </button>
             </div>
@@ -78,7 +78,7 @@ export function Login({onLogin, onCancel, onNoLoginClick, onOpenDiagramSelector}
               <h3>Quick start without login</h3>
               <p>Start a quick diagram inside Confluence — no account required. Templates and diagram types are available once you open the editor.</p>
               
-              <button id="open-editor-button" class="secondary-button" onClick="${onOpenDiagramSelector}">
+              <button id="open-editor-button" class="secondary-button" onClick=${onOpenDiagramSelector}>
                 Open Editor
               </button>
             </div>

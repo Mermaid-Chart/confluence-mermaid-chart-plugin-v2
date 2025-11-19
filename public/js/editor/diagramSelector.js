@@ -69,7 +69,7 @@ export function DiagramSelector({onSelectDiagram, onCancel}) {
       <div class="diagram-selector-content">
         <div class="diagram-selector-header">
           <h3>Choose from one of our sample diagrams.</h3>
-          <button class="close-button" onClick="${onCloseClick}">×</button>
+          <button class="close-button" onClick=${onCloseClick}>×</button>
         </div>
         
         <div class="diagram-samples-grid">

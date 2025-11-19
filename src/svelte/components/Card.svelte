@@ -29,7 +29,12 @@
     tabindex="0"
     class="flex h-11 gap-2 flex-none cursor-pointer items-center justify-between whitespace-nowrap bg-[#F1F8FA] p-[12px] {isTabsShown ? 'pb-1' : ''}"
     on:click={toggleCardOpen}
-    on:keypress={toggleCardOpen}
+    on:keydown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleCardOpen();
+      }
+    }}
   >
     {#if icon || title}
       <span role="menubar" tabindex="0" class="flex w-fit items-center gap-[8px] "  style="font-family: 'Recursive'">
