@@ -204,6 +204,8 @@
     code = newCode;
   }
 
+  $: isCodeEmpty = !code || code.trim() === '';
+
   function handleRenderError(errorMsg) {
     renderError = errorMsg;
 
@@ -306,14 +308,15 @@
     />
     <button
       class="btn h-[42px] gap-1 border text-sm font-medium flex items-center justify-center px-4 py-2 rounded-[12px]
-        {!(isRendering || error)
+        {!(isRendering || error || isCodeEmpty)
           ? 'border-mermaid-pink-500 text-white hover:bg-mermaid-pink-600'
           : 'cursor-not-allowed border-surface-300 bg-surface-100 text-surface-400'}"
-      style={!(isRendering || error)
+      style={!(isRendering || error || isCodeEmpty)
         ? 'background: var(--Color-Mermaid-Pink-500, rgba(224, 9, 95, 1));'
         : ''}
       on:click={handleInsert}
-      disabled={isRendering || !!error}
+      disabled={isRendering || !!error || isCodeEmpty}
+      title={isCodeEmpty ? 'Please add diagram code to insert' : isRendering ? 'Inserting diagram...' : error ? error : 'Insert diagram into Confluence'}
     >
       Insert diagram
     </button>
