@@ -124,6 +124,10 @@ app.use(addon.middleware());
 const staticDir = path.join(process.cwd(), "public");
 app.use(express.static(staticDir));
 
+// Mount the dist directory for Svelte build output
+const distDir = path.join(process.cwd(), "dist");
+app.use('/dist', express.static(distDir));
+
 // Atlassian security policy requirements
 // http://go.atlassian.com/security-requirements-for-cloud-apps
 app.use(nocache());

@@ -1,0 +1,229 @@
+/* Styling for the No Login Editor component */
+.no-login-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.no-login-editor .editor-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+  gap: 20px;
+}
+
+.no-login-editor .split-view {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+
+.no-login-editor .code-editor,
+.no-login-editor .preview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dfe1e6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.no-login-editor h3 {
+  padding: 10px;
+  margin: 0;
+  background-color: #f4f5f7;
+  border-bottom: 1px solid #dfe1e6;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.no-login-editor .preview-container {
+  padding: 15px;
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-login-editor .diagram-preview {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-login-editor .diagram-preview svg {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.no-login-editor .options-panel {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 15px;
+  background-color: #f4f5f7;
+  border: 1px solid #dfe1e6;
+  border-radius: 4px;
+}
+
+.no-login-editor .size-selector,
+.no-login-editor .theme-selector,
+.no-login-editor .caption-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.no-login-editor .caption-input {
+  flex: 1;
+}
+
+.no-login-editor .caption-input input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+}
+
+.no-login-editor select {
+  padding: 6px 8px;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+  background-color: white;
+}
+
+/* Theme selector specific styling */
+.no-login-editor .theme-selector {
+  position: relative;
+  padding: 4px 8px;
+  border-radius: 3px;
+  background-color: rgba(9, 30, 66, 0.04);
+}
+
+.no-login-editor .theme-selector select {
+  min-width: 150px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: menulist;
+  background-color: white;
+}
+
+.no-login-editor .theme-selector select:hover {
+  border-color: #5e9ed6;
+}
+
+.no-login-editor .theme-selector select:focus {
+  outline: none;
+  border-color: #4c9aff;
+  box-shadow: 0 0 0 2px rgba(76, 154, 255, 0.2);
+}
+
+.no-login-editor .theme-selector label {
+  font-weight: 500;
+  color: #172B4D;
+}
+
+.no-login-editor .insert-button {
+  padding: 8px 16px;
+  background-color: #0052CC;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.no-login-editor .insert-button:hover {
+  background-color: #0065ff;
+}
+
+.no-login-editor .insert-button:disabled {
+  background-color: #DFE1E6;
+  color: #5e6c84;
+  cursor: not-allowed;
+}
+
+.no-login-editor .cancel-button {
+  padding: 6px 12px;
+  background-color: #ffffff;
+  color: #172b4d;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.no-login-editor .cancel-button:hover {
+  background-color: #f4f5f7;
+}
+
+.no-login-editor .iframe-cancel {
+  background-color: #f4f5f7;
+  border-bottom: 1px solid #dfe1e6;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.no-login-editor .edit-mode-badge {
+  background-color: #0052CC;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  margin-left: 10px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.no-login-editor .error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-login-editor .error .error-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.no-login-editor .error .error-message {
+  text-align: center;
+}
+
+.no-login-editor .loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: #555;
+}
+
+.no-login-editor .loading .spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
