@@ -14,9 +14,13 @@ html, body {
 *,
 *:before,
 *:after {
-    box-sizing: border-box;
     font-size: 14px;
     color: var(--text-color);
+}
+.exclude-global,
+.exclude-global * {
+  font-size: revert;
+  color: revert;
 }
 
 input[type="text"], select, textarea {
@@ -33,7 +37,14 @@ button {
     border-radius: 4px;
     cursor: pointer;
     color: white;
-    background-color: rgb(0, 82, 204);
     padding: 6px 12px;
     font-weight: bold;
+}
+
+.emptyTemplate{
+    background-color: #232030;
+}
+
+.emptyTemplate:hover{
+    background-color: #445063;
 }

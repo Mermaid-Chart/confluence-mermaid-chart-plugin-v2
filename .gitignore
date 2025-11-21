@@ -10,3 +10,5 @@ views/*.js.map
 views/node/*.js
 views/node/*.js.map
 .vercel
+dist/
+
