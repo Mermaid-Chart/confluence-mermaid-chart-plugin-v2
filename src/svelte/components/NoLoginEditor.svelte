@@ -310,10 +310,10 @@
       class="btn h-[42px] gap-1 border text-sm font-medium flex items-center justify-center px-4 py-2 rounded-[12px]
         {!(isRendering || error || isCodeEmpty)
           ? 'border-mermaid-pink-500 text-white hover:bg-mermaid-pink-600'
-          : 'cursor-not-allowed border-surface-300 bg-surface-100 text-surface-400'}"
+          : 'cursor-not-allowed border-gray-300 bg-gray-200 text-gray-500'}"
       style={!(isRendering || error || isCodeEmpty)
         ? 'background: var(--Color-Mermaid-Pink-500, rgba(224, 9, 95, 1));'
-        : ''}
+        : 'background: #f3f4f6; border-color: #d1d5db; color: #6b7280;'}
       on:click={handleInsert}
       disabled={isRendering || !!error || isCodeEmpty}
       title={isCodeEmpty ? 'Please add diagram code to insert' : isRendering ? 'Inserting diagram...' : error ? error : 'Insert diagram into Confluence'}
