@@ -8,7 +8,7 @@ app:
     name: nodejs20.x
 remotes:
   - key: connect
-    baseUrl: https://confluencetest.mermaid.ai
+    baseUrl: https://confluencetest.mermaidchart.com
 connectModules:
   confluence:lifecycle:
     - key: lifecycle-events
