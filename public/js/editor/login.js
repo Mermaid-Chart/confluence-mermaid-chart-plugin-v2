@@ -1,5 +1,6 @@
 import {h} from 'https://esm.sh/preact';
 import htm from 'https://esm.sh/htm';
+import analytics from '../lib/analytics.js';
 
 const html = htm.bind(h);
 let timeout;
@@ -7,6 +8,7 @@ let timeout;
 export function Login({onLogin, onCancel, onNoLoginClick, onOpenDiagramSelector}) {
   
   const onLoginClick = () => {
+    analytics.trackConnectToMermaidChart();
     const width = 500;
     const height = 650;
         const left = (screen.width / 2) - (width / 2);
