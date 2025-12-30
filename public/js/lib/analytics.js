@@ -6,15 +6,15 @@ class Analytics {
     this.analyticsID = getAnalyticsID();
   }
 
- 
-
-  sendEvent(eventName, eventID, diagramType, userLoginState = false) {
+  sendEvent(eventName, eventID, userLoginState = false) {
     const payload = {
       analyticsID: this.analyticsID,
       eventName,
       eventID,
-      diagramType,
-      userLoginState,
+      diagramType: 'unknown',
+      userLoginState: userLoginState,
+      diagramID: 'unknown',
+      pluginSource: 'confluence'
     };
 
     httpClient.post('/rest-api/plugins/pulse', payload).catch((error) => {
@@ -22,47 +22,39 @@ class Analytics {
     });
   }
 
-    trackConnectToMermaidChart() {
-    this.sendEvent('Confluence Plugin User Logged In', 'CONFLUENCE_PLUGIN_LOGIN', undefined, true);
-  }
-  /**
-   * Track when non-logged-in user inserts/saves a diagram
-   */
- trackDiagramInsertedNoAuth() {
-  console.log('[Analytics] Confluence diagram inserted – no login');
-  this.sendEvent(
-    'Confluence Diagram Inserted – No Login',
-    'CONFLUENCE_DIAGRAM_INSERTED_NO_AUTH'
-  );
-}
-
-  /** 
-   * Track when a diagram is created
-   */
-  trackDiagramCreated() {
-    console.log('Tracking diagram created');
+     trackConnectToMermaidChart() {
     this.sendEvent(
-      'Diagram Created',
-      'DIAGRAM_CREATED',
+      'Confluence Plugin User Logged In', 
+      'CONFLUENCE_PLUGIN_LOGIN', 
+      true   
     );
   }
- 
-  /**
-   * Track when a diagram is edited
-   */
-trackDiagramEditedNoAuth() {
-  console.log('[Analytics] Confluence diagram edited – no login');
+
+ trackDiagramInsertedNoAuth() {
   this.sendEvent(
-    'Confluence Diagram Edited – No Login',
-    'CONFLUENCE_DIAGRAM_EDITED_NO_AUTH'
+    'Plugin diagram insert',
+    'PLUGIN_DIAGRAM_INSERT'
   );
 }
 
-  /**
-   * Track when no-login editor is used/opened
-   */
+ 
+trackDiagramEditedNoAuth() {
+  this.sendEvent(
+    'Plugin diagram edit',
+    'PLUGIN_DIAGRAM_EDIT'
+  );
+}
+
+  trackPluginDiagramEdit(diagram) {
+    this.sendEvent(
+      'Plugin diagram edit',
+      'PLUGIN_DIAGRAM_EDIT',
+      true     
+    );
+  }
+
+
 trackEditorOpenedNoAuth() {
-  console.log('[Analytics] Confluence editor opened – no login');
   this.sendEvent(
     'Confluence Editor Opened – No Login',
     'CONFLUENCE_EDITOR_OPENED_NO_AUTH'
@@ -81,5 +73,4 @@ function getAnalyticsID() {
   }
   return id;
 }
-
 export default new Analytics();

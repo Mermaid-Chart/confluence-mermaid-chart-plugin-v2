@@ -107,7 +107,6 @@
     let dataLoaded = false;
     
     if (existingDiagramData && existingDiagramData.diagramCode) {
-      console.log('Loading existing diagram data into no-login editor',existingDiagramData);
       analytics.trackDiagramEditedNoAuth();
 
       code = existingDiagramData.diagramCode;
@@ -157,7 +156,7 @@
   });
 
   async function handleInsert() {
-    analytics.trackDiagramInsertedNoAuth();
+  
     if (isRendering) return;
     
     try {
@@ -166,6 +165,7 @@
       }
 
       const currentCode = editorComponent ? editorComponent.getValue() : code;
+        analytics.trackDiagramInsertedNoAuth();
       
       if (!currentCode || currentCode.trim() === '') {
         throw new Error("Diagram code cannot be empty");

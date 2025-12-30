@@ -6,6 +6,7 @@ import {Form} from './form.js';
 import {SvelteEditorWrapper} from './svelteEditorWrapper.js';
 import {DiagramSelector} from './diagramSelector.js';
 import {getSampleDiagrams} from "/js/mermaid.js";
+import analytics from '../lib/analytics.js';
 
 const html = htm.bind(h);
 
@@ -53,6 +54,7 @@ function App() {
     }
     
     const onOpenDiagramSelector = () => {
+        analytics.trackEditorOpenedNoAuth();
         setShowDiagramSelector(true);
         return false;
     }
