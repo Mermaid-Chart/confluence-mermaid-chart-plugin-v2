@@ -1,8 +1,9 @@
 import axios from 'https://esm.sh/axios';
+import { MC_BASE_URL } from '../../../routes';
 
 
 const httpClient = axios.create({
-  baseURL: "https://test.mermaidchart.com",
+  baseURL: MC_BASE_URL  ,
   headers: {
     'Content-Type': 'application/json',
   },
