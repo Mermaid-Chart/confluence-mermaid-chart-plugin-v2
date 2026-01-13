@@ -5,6 +5,7 @@ import { IMAGE_SIZES } from "/js/constatnts.js";
 import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
 import { compressBase64Image,sizeConfig, calculateDataSize } from "/js/imageUtils.js";
+import analytics from "../lib/analytics.js";
 
 const html = htm.bind(h);
 
@@ -116,6 +117,7 @@ window.AP.confluence.getMacroBody((macroBody) => {
         const editUrl = buildUrl(
           `/app/projects/${params.projectID}/diagrams/${params.documentID}/version/v${params.major}.${params.minor}/edit?pluginSource=confluence`
         );
+        analytics.trackPluginDiagramEdit();
         setIframeURL(editUrl);
       }
     });

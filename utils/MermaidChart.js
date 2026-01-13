@@ -84,6 +84,7 @@ class MermaidChart {
     async getAuthorizationData({
         state,
         scope,
+        trackingParams
     } = {}) {
         if (!this.redirectURI) {
             throw new Error('redirectURI is not set');
@@ -104,6 +105,9 @@ class MermaidChart {
             ),
             state: stateID,
             scope: scope ?? 'email',
+            utm_source: trackingParams?.utm_source || 'mermaid_chart_confluence_plugin',
+            utm_medium: trackingParams?.utm_medium || 'confluence', 
+            utm_campaign: trackingParams?.utm_campaign || 'confluence_plugin'
         };
 
         setTimeout(async () => {
