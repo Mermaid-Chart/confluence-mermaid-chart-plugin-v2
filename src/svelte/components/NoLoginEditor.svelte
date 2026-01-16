@@ -10,6 +10,7 @@
   import CodeSvgIcon from './CodeSvgIcon.svelte';
   import PaletteIcon from '~icons/material-symbols/palette-outline';
    import layouts from '@mermaid-chart/layout-elk';
+  import analytics from '../../../public/js/lib/analytics.js';
 
   export const onCancel = () => {};
   export let existingDiagramData = null;
@@ -106,6 +107,8 @@
     let dataLoaded = false;
     
     if (existingDiagramData && existingDiagramData.diagramCode) {
+      analytics.trackDiagramEditedNoAuth();
+
       code = existingDiagramData.diagramCode;
       if (existingDiagramData.size) size = existingDiagramData.size;
       if (existingDiagramData.caption) caption = existingDiagramData.caption;
@@ -153,6 +156,7 @@
   });
 
   async function handleInsert() {
+  
     if (isRendering) return;
     
     try {
@@ -161,6 +165,7 @@
       }
 
       const currentCode = editorComponent ? editorComponent.getValue() : code;
+        analytics.trackDiagramInsertedNoAuth();
       
       if (!currentCode || currentCode.trim() === '') {
         throw new Error("Diagram code cannot be empty");
