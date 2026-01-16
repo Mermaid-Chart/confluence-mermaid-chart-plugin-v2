@@ -1,7 +1,7 @@
 import axios from 'https://esm.sh/axios';
 
 const getBaseURL = () => {
-  return window.MC_BASE_URL || "https://test.mermaidchart.com";
+  return window.MC_BASE_URL ;
 };
 
 const httpClient = axios.create({
