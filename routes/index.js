@@ -101,7 +101,13 @@ export default function routes(app, addon) {
       user = access_token ? await mermaidAPI.getUser(access_token) : undefined
     } catch (e) {}
 
-    const auth = user ? {} : await mermaidAPI.getAuthorizationData()
+    const auth = user ? {} : await mermaidAPI.getAuthorizationData({
+      trackingParams: {
+        utm_source: 'mermaid_chart_confluence_plugin',
+        utm_medium: 'confluence',
+        utm_campaign: 'confluence_plugin'
+      }
+    })
 
     res.render("editor.hbs", {
       MC_BASE_URL: MC_BASE_URL,
