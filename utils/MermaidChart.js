@@ -2,7 +2,7 @@ import {v4 as uuid} from 'uuid';
 import fetch from 'node-fetch';
 import {getEncodedSHA256Hash} from './index.js';
 
-const defaultBaseURL = 'https://test.mermaidchart.com';
+const defaultBaseURL = 'https://mermaid.ai';
 
 const CLIENT_KEY = 'all';
 
