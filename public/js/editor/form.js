@@ -1,8 +1,6 @@
 import { Fragment, h } from "https://esm.sh/preact";
 import { useEffect, useRef, useState } from "https://esm.sh/preact/hooks";
 import htm from "https://esm.sh/htm";
-import { IMAGE_SIZES } from "/js/constatnts.js";
-import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
 import { compressForConfluence, sizeConfig, calculateDataSize } from "/js/imageUtils.js";
 import analytics from "../lib/analytics.js";
