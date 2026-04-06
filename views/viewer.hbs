@@ -15,10 +15,11 @@
 </style>
 <script type="module">
     import {IMAGE_SIZES} from '/js/constatnts.js';
+    import { getImageDataURI } from '/js/imageUtils.js';
     const imageContainer = document.getElementById('image');
     AP.confluence.getMacroBody((macroBody) => {
         const img = document.createElement("img")
-        img.src = 'data:image/x-png;base64, ' + macroBody;
+        img.src = getImageDataURI(macroBody);
         imageContainer.appendChild(img);
     });
     AP.confluence.getMacroData(async (data) => {
