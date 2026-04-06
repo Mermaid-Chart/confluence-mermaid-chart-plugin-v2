@@ -4,7 +4,7 @@ import htm from "https://esm.sh/htm";
 import { IMAGE_SIZES } from "/js/constatnts.js";
 import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
-import { compressForConfluence, sizeConfig, calculateDataSize } from "/js/imageUtils.js";
+import { compressBase64Image,sizeConfig, calculateDataSize } from "/js/imageUtils.js";
 import analytics from "../lib/analytics.js";
 
 const html = htm.bind(h);
@@ -53,42 +53,35 @@ export function Form({ mcAccessToken, user, onLogout }) {
       if (window.AP.dialog.getButton) {
         window.AP.dialog.getButton("submit").hide();
       }
-
-      const macroParamsSize = calculateDataSize(macroParams);
-      let bodyDataToSave = diagramImage;
       
+      // Both diagramImage and saveData.diagramCode contain base64-encoded image data
+      let bodyDataToSave = diagramImage;
       if (diagramImage && diagramImage.length > 0) {
+        const macroParamsSize = calculateDataSize(macroParams);
         const bodyDataSize = calculateDataSize(diagramImage);
         const totalSize = macroParamsSize + bodyDataSize;
-        
-        if (totalSize > sizeConfig.maxRequestSize) {
-          bodyDataToSave = await compressForConfluence(diagramImage);
-          macroParams.diagramCode = await compressForConfluence(saveData.diagramCode);
-          const finalBodySize = calculateDataSize(bodyDataToSave);
-          const finalParamsSize = calculateDataSize(macroParams);
-          const finalTotalSize = finalBodySize + finalParamsSize;
-          if (finalTotalSize > sizeConfig.maxRequestSize) {
-            throw new Error(`Diagram is too complex (${(finalTotalSize / 1024).toFixed(2)}KB). Try simplifying your diagram or reducing the number of elements.`);
-          }
-        }
+
+        if (totalSize > sizeConfig.maxUncompressedSize) {
+          // Compress both base64 images if the total size is too large
+          bodyDataToSave = await compressBase64Image(
+            diagramImage, 
+            sizeConfig.compressionQuality, 
+            sizeConfig.compressionMaxWidth
+          ).catch(() => diagramImage);
+          
+          macroParams.diagramCode = await compressBase64Image(
+            saveData.diagramCode, 
+            sizeConfig.compressionQuality, 
+            sizeConfig.compressionMaxWidth
+          ).catch(() => saveData.diagramCode);
+        } 
       }
       
       await window.AP.confluence.saveMacro(macroParams, bodyDataToSave);
       await new Promise(resolve => setTimeout(resolve, 800));
       window.AP.confluence.closeMacroEditor();
     } catch (error) {
-      console.error('❌ Save failed:', error);
-      
-      let errorMessage = 'Unable to save diagram.';
-      if (error.message && error.message.includes('too complex')) {
-        errorMessage = error.message;
-      } else if (error.message && error.message.includes('413')) {
-        errorMessage = 'Diagram is too large for Confluence. Please simplify your diagram by reducing the number of elements, text length, or complexity.';
-      } else if (error.message) {
-        errorMessage += ` ${error.message}`;
-      }
-      alert(errorMessage);
-      
+      console.error("The diagram is too large to save, Try simplifying your diagram or reducing its complexity");
       if (window.AP.dialog.getButton) {
         window.AP.dialog.getButton("submit").show();
       }
@@ -97,6 +90,9 @@ export function Form({ mcAccessToken, user, onLogout }) {
   };
   
 
+  const onOpenFrame = (url) => {
+    setIframeURL(url);
+  };
 
   const [data, setData] = useState({
     caption: "",
@@ -225,6 +221,10 @@ window.AP.confluence.getMacroBody((macroBody) => {
               </div>
             `}
             <${Header} user="${user}" onLogout="${onLogout}"/>
+            <div class="wrapper">
+                <${Diagram} document=${data} onOpenFrame="${onOpenFrame}"
+                            mcAccessToken="${mcAccessToken}"/>
+            </div>
         </Fragment>
     `;
 }

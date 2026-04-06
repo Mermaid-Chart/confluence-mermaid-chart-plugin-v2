@@ -185,14 +185,14 @@ class MermaidChart {
         return url;
     }
 
-    async getDocumentAsSvg(
+    async getDocumentAsPng(
         document,
         theme = 'light',
     ) {
-        const svg = await fetch(
-            this.URLS.raw(document, theme).svg
+        const png = await fetch(
+            this.URLS.raw(document, theme).png
         );
-        return await svg.text();
+        return await png.text();
     }
 
     async getRawDocument(

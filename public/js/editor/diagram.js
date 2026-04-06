@@ -1,7 +1,6 @@
 import {h} from 'https://esm.sh/preact';
 import htm from 'https://esm.sh/htm';
 import {useEffect} from 'https://esm.sh/preact/hooks';
-import { getImageDataURI } from '/js/imageUtils.js';
 
 const html = htm.bind(h);
 
@@ -10,7 +9,7 @@ export function Diagram({document, onOpenFrame, mcAccessToken}) {
     if (document.documentID) {
         image = html`
             <div class="image">
-                <img src="${getImageDataURI(document.diagramImage)}" alt="${document.title}"/>
+                <img src="data:image/x-png;base64, ${document.diagramImage}" alt="${document.title}"/>
             </div>`;
     }
 
