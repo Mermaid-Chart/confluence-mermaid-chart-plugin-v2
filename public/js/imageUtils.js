@@ -6,15 +6,82 @@ export const sizeConfig = {
   compressionMaxWidth: 1000
 };
 
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
+/**
+ * Strips a data: URL wrapper so detection/compression work on raw base64 or text.
+ * Used when saving the macro body (Confluence expects raw base64, not a data URL).
+ * @param {string} diagramImage
+ * @returns {string}
+ */
+export function extractBase64ForMacroBody(diagramImage) {
+  if (diagramImage == null || diagramImage === '') {
+    return diagramImage;
+  }
+  if (typeof diagramImage !== 'string') {
+    return diagramImage;
+  }
+  const s = diagramImage.trim();
+  if (s.startsWith('data:')) {
+    const comma = s.indexOf(',');
+    if (comma === -1) {
+      return diagramImage;
+    }
+    const header = s.slice(0, comma).toLowerCase();
+    const body = s.slice(comma + 1);
+    if (header.includes('base64')) {
+      return body.replace(/\s/g, '');
+    }
+    try {
+      const decoded = decodeURIComponent(body);
+      return utf8ToBase64(decoded);
+    } catch {
+      return utf8ToBase64(body);
+    }
+  }
+  const t = s.trimStart();
+  if (t.startsWith('<') || t.startsWith('<?xml')) {
+    return utf8ToBase64(t);
+  }
+  return s.replace(/\s/g, '');
+}
+
 /**
  * Detects if base64 string is SVG or PNG format
  * @param {string} base64String - The base64 string to check
  * @returns {string} - 'svg' or 'png'
  */
 export function detectImageFormat(base64String) {
+  if (!base64String || typeof base64String !== 'string') {
+    return 'png';
+  }
   try {
-    const decoded = atob(base64String.substring(0, 100)); // Check first 100 chars
-    if (decoded.includes('<svg') || decoded.includes('<?xml')) {
+    const len = base64String.length;
+    if (len < 8) {
+      return 'png';
+    }
+    // Decode a large enough prefix: SVG often has <?xml, comments, or whitespace before <svg>
+    const maxB64 = Math.min(len, 32768);
+    const aligned = maxB64 - (maxB64 % 4);
+    const decoded = atob(base64String.substring(0, aligned));
+
+    // PNG starts with magic bytes (binary); never treat as SVG
+    if (
+      decoded.length >= 4 &&
+      decoded.charCodeAt(0) === 0x89 &&
+      decoded.slice(1, 4) === 'PNG'
+    ) {
+      return 'png';
+    }
+
+    const lower = decoded.toLowerCase();
+    if (
+      lower.includes('<svg') ||
+      decoded.includes('<?xml') ||
+      lower.includes('<!doctype svg')
+    ) {
       return 'svg';
     }
   } catch (error) {
@@ -25,16 +92,85 @@ export function detectImageFormat(base64String) {
 
 /**
  * Gets the appropriate data URI for an image based on its format
- * @param {string} base64String - The base64 image string
- * @param {string} format - 'svg' or 'png'
- * @returns {string} - Complete data URI
+ * @param {string} input - Raw base64, full data: URL, or raw SVG markup
+ * @param {string} format - optional 'svg' or 'png'
+ * @returns {string} - Complete data URI for <img src>
  */
-export function getImageDataURI(base64String, format = null) {
-  const detectedFormat = format || detectImageFormat(base64String);
-  if (detectedFormat === 'svg') {
-    return `data:image/svg+xml;base64,${base64String}`;
+export function getImageDataURI(input, format = null) {
+  if (input == null || input === '') {
+    return '';
   }
-  return `data:image/png;base64,${base64String}`;
+  const s = typeof input === 'string' ? input : String(input);
+
+  
+  if (s.startsWith('data:')) {
+    return s;
+  }
+
+  const trimmed = s.trimStart();
+  if (trimmed.startsWith('<') || trimmed.startsWith('<?xml')) {
+    if (/<svg[\s>/]/i.test(trimmed) || trimmed.includes('<svg')) {
+      const uri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(trimmed)}`;
+      return uri;
+    }
+  }
+
+  const detectedFormat = format || detectImageFormat(s);
+  if (detectedFormat === 'svg') {
+    return `data:image/svg+xml;base64,${s}`;
+  }
+  return `data:image/png;base64,${s}`;
+}
+
+/**
+ * Decodes SVG markup for inline DOM preview.
+ * Root SVG with width="100%" / height="100%" has no intrinsic size in img elements, so it renders invisible;
+ * inlining avoids that. Returns null for PNG or invalid input.
+ * @param {string} input
+ * @returns {string|null}
+ */
+export function getSvgMarkupForPreview(input) {
+  if (input == null || input === '') {
+    return null;
+  }
+  if (typeof input !== 'string') {
+    return null;
+  }
+  const s = input.trim();
+  if (s.startsWith('<') && /<svg[\s>/]/i.test(s)) {
+    return s;
+  }
+  if (s.startsWith('data:')) {
+    const comma = s.indexOf(',');
+    if (comma === -1) {
+      return null;
+    }
+    const header = s.slice(0, comma).toLowerCase();
+    const body = s.slice(comma + 1);
+    if (!header.includes('svg')) {
+      return null;
+    }
+    if (header.includes('base64')) {
+      try {
+        return atob(body);
+      } catch {
+        return null;
+      }
+    }
+    try {
+      return decodeURIComponent(body);
+    } catch {
+      return null;
+    }
+  }
+  if (detectImageFormat(s) !== 'svg') {
+    return null;
+  }
+  try {
+    return atob(s);
+  } catch {
+    return null;
+  }
 }
 
 /**

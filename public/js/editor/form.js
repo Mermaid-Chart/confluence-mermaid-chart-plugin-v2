@@ -1,8 +1,9 @@
 import { Fragment, h } from "https://esm.sh/preact";
 import { useEffect, useRef, useState } from "https://esm.sh/preact/hooks";
 import htm from "https://esm.sh/htm";
+import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
-import { compressForConfluence, sizeConfig, calculateDataSize } from "/js/imageUtils.js";
+import { compressForConfluence, sizeConfig, calculateDataSize, extractBase64ForMacroBody } from "/js/imageUtils.js";
 import analytics from "../lib/analytics.js";
 
 const html = htm.bind(h);
@@ -26,39 +27,46 @@ export function Form({ mcAccessToken, user, onLogout }) {
   const [initialized, setinitialized] = useState(false);
   const [location, setLocation] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  
+  const saveInFlightRef = useRef(false);
+
   const buildUrl = (pathname) => {
     return `${MC_BASE_URL}/oauth/frame/?token=${mcAccessToken}&redirect=${pathname}`;
   };
 
- const saveDiagram = async () => {
-    if (isSaving) return;
-    
-    setIsSaving(true);
-    
-    const { diagramImage, ...saveData } = dataRef.current;
-    const macroParams = {
-      documentID: saveData.documentID,
-      projectID: saveData.projectID,
-      major: saveData.major,
-      minor: saveData.minor,
-      caption: saveData.caption,
-      diagramCode: saveData.diagramCode,
-      size: saveData.size
-    };
-    
+  const saveDiagram = async () => {
+    if (saveInFlightRef.current) {
+      return;
+    }
+    saveInFlightRef.current = true;
     try {
+      setIsSaving(true);
+
+      const { diagramImage: rawImage, ...saveData } = dataRef.current;
+      const diagramImage =
+        rawImage != null && rawImage !== ""
+          ? extractBase64ForMacroBody(rawImage) || rawImage
+          : rawImage;
+      const macroParams = {
+        documentID: saveData.documentID,
+        projectID: saveData.projectID,
+        major: saveData.major,
+        minor: saveData.minor,
+        caption: saveData.caption,
+        diagramCode: saveData.diagramCode,
+        size: saveData.size
+      };
+
       if (window.AP.dialog.getButton) {
         window.AP.dialog.getButton("submit").hide();
       }
 
       const macroParamsSize = calculateDataSize(macroParams);
       let bodyDataToSave = diagramImage;
-      
+
       if (diagramImage && diagramImage.length > 0) {
         const bodyDataSize = calculateDataSize(diagramImage);
         const totalSize = macroParamsSize + bodyDataSize;
-        
+
         if (totalSize > sizeConfig.maxRequestSize) {
           bodyDataToSave = await compressForConfluence(diagramImage);
           macroParams.diagramCode = await compressForConfluence(saveData.diagramCode);
@@ -70,13 +78,13 @@ export function Form({ mcAccessToken, user, onLogout }) {
           }
         }
       }
-      
+
       await window.AP.confluence.saveMacro(macroParams, bodyDataToSave);
       await new Promise(resolve => setTimeout(resolve, 800));
       window.AP.confluence.closeMacroEditor();
     } catch (error) {
       console.error('❌ Save failed:', error);
-      
+
       let errorMessage = 'Unable to save diagram.';
       if (error.message && error.message.includes('too complex')) {
         errorMessage = error.message;
@@ -86,15 +94,20 @@ export function Form({ mcAccessToken, user, onLogout }) {
         errorMessage += ` ${error.message}`;
       }
       alert(errorMessage);
-      
+
       if (window.AP.dialog.getButton) {
         window.AP.dialog.getButton("submit").show();
       }
       setIsSaving(false);
+    } finally {
+      saveInFlightRef.current = false;
     }
   };
-  
 
+
+  const onOpenFrame = (url) => {
+    setIframeURL(url);
+  };
 
   const [data, setData] = useState({
     caption: "",
@@ -107,14 +120,14 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
 
   useEffect(() => {
-window.AP.confluence.getMacroBody((macroBody) => {
+    window.AP.confluence.getMacroBody((macroBody) => {
       setData((data) => ({ ...data, diagramImage: macroBody }));
     });
 
     window.AP.confluence.getMacroData(({ __bodyContent: _, ...params }) => {
       setData((data) => ({ ...data, ...params }));
       setinitialized(true);
-      
+
       if (params.documentID) {
         const editUrl = buildUrl(
           `/app/projects/${params.projectID}/diagrams/${params.documentID}/version/v${params.major}.${params.minor}/edit?pluginSource=confluence`
@@ -124,7 +137,7 @@ window.AP.confluence.getMacroBody((macroBody) => {
       }
     });
 
-  window.AP.events.on("dialog.submit", saveDiagram);
+    window.AP.events.on("dialog.submit", saveDiagram);
 
     window.AP.dialog.disableCloseOnSubmit();
 
@@ -132,13 +145,13 @@ window.AP.confluence.getMacroBody((macroBody) => {
       const action = e.data.action;
       const messageType = e.data.type;
       if (messageType === 'mermaid-chart-confluence-back' && e.data.action === 'navigateBack') {
-        setIframeURL("");  
+        setIframeURL("");
         if (window.AP && window.AP.confluence) {
           window.AP.confluence.closeMacroEditor();
         }
         return;
       }
-      
+
       switch (action) {
         case "cancel":
           setIframeURL("");
@@ -149,19 +162,31 @@ window.AP.confluence.getMacroBody((macroBody) => {
           setIframeURL("");
           break;
 
-        case "save":
+        case "save": {
           const saveDataWithDefaults = {
             caption: e.data.data.caption || "",
             size: e.data.data.size || "Medium",
             ...e.data.data
           };
-          setData((prev) => ({ ...prev, ...saveDataWithDefaults }));
+          setData((prev) => {
+            const merged = { ...prev, ...saveDataWithDefaults };
+            dataRef.current = merged;
+            const d = merged.diagramImage;
+            const head =
+              typeof d === "string"
+                ? d.slice(0, 80)
+                : d == null
+                  ? "(none)"
+                  : typeof d;
+            return merged;
+          });
           setIsSaving(true);
           setTimeout(() => {
             saveDiagram();
-            setIframeURL(""); 
+            setIframeURL("");
           }, 50);
           break;
+        }
       }
     };
   }, []);
@@ -222,7 +247,10 @@ window.AP.confluence.getMacroBody((macroBody) => {
                 Saving diagram...
               </div>
             `}
-            <${Header} user="${user}" onLogout="${onLogout}"/>
+                 <div class="wrapper">
+                <${Diagram} document=${data} onOpenFrame="${onOpenFrame}"
+                            mcAccessToken="${mcAccessToken}"/>
+            </div>
         </Fragment>
     `;
 }

@@ -1,37 +1,59 @@
-import {h} from 'https://esm.sh/preact';
+import { h } from 'https://esm.sh/preact';
 import htm from 'https://esm.sh/htm';
-import {useEffect} from 'https://esm.sh/preact/hooks';
-import { getImageDataURI } from '/js/imageUtils.js';
+import { useEffect, useRef } from 'https://esm.sh/preact/hooks';
+import { getImageDataURI, getSvgMarkupForPreview } from '/js/imageUtils.js';
 
 const html = htm.bind(h);
 
-export function Diagram({document, onOpenFrame, mcAccessToken}) {
-    let image = '';
-    if (document.documentID) {
-        image = html`
-            <div class="image">
-                <img src="${getImageDataURI(document.diagramImage)}" alt="${document.title}"/>
-            </div>`;
+function SvgInlinePreview({ svgMarkup }) {
+  const ref = useRef();
+  useEffect(() => {
+    if (!ref.current) {
+      return;
     }
+    ref.current.innerHTML = svgMarkup || '';
+  }, [svgMarkup]);
+  return html`<div class="image svg-inline" ref=${ref} />`;
+}
 
-    const buildUrl = (pathname) => {
-        return `${MC_BASE_URL}/oauth/frame/?token=${mcAccessToken}&redirect=${pathname}`;
-    };
+export function Diagram({ document, onOpenFrame, mcAccessToken }) {
+  let image = '';
+  if (document.documentID) {
+    const svgMarkup = document.diagramImage
+      ? getSvgMarkupForPreview(document.diagramImage)
+      : null;
+    if (svgMarkup) {
+      image = html`<${SvgInlinePreview} svgMarkup=${svgMarkup} />`;
+    } else if (document.diagramImage) {
+      const previewUri = getImageDataURI(document.diagramImage);
+      image = html`
+            <div class="image">
+                <img
+                    src="${previewUri}"
+                    alt="${document.title}"
+                />
+            </div>`;
+    } else {
+      image = html`<div class="image"></div>`;
+    }
+  }
 
+  const buildUrl = (pathname) => {
+    return `${MC_BASE_URL}/oauth/frame/?token=${mcAccessToken}&redirect=${pathname}`;
+  };
 
-    const onSelect = () => {
-        onOpenFrame(buildUrl(
-            `/app/plugins/confluence/select?pluginSource=confluence`))
-        return false;
-    };
+  const onSelect = () => {
+    onOpenFrame(buildUrl(`/app/plugins/confluence/select?pluginSource=confluence`));
+    return false;
+  };
 
-    useEffect(() => {
-        if (!document.documentID) {
-            onSelect();
-        }
-    }, [document])
+  useEffect(() => {
+    if (!document.documentID) {
+      onSelect();
+    }
+  }, [document]);
 
-    return html`
+  return html`
         <div id="diagram-container">
             <div class="diagram">
                 ${image}
