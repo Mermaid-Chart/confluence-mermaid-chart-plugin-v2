@@ -2,7 +2,7 @@
   "key": "mermaid-chart-app-for-confluence",
   "name": "Mermaid Chart for Confluence",
   "description": "Official Mermaid Chart App for Confluence",
-  "baseUrl": "https://confluence.mermaidchart.com",
+  "baseUrl": "https://confluencestage.mermaidchart.com",
   "vendor": {
     "name": "Mermaid Chart Inc",
     "url": "http://www.mermaidchart.com",
