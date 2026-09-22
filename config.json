@@ -12,7 +12,7 @@
   "preview": {
     "port": "$PORT",
     "errorTemplate": true,
-    "localBaseUrl": "https://confluencestage.mermaidchart.com",
+    "localBaseUrl": "https://confluence.mermaidchart.com",
     "allowedBaseUrls": ["$VERCEL_BRANCH_URL"],
     "store": {
       "adapter": "@upstash/redis",
@@ -23,7 +23,7 @@
   "production": {
     "port": "$PORT",
     "errorTemplate": true,
-    "localBaseUrl": "https://confluencestage.mermaidchart.com",
+    "localBaseUrl": "https://confluence.mermaidchart.com",
     "allowedBaseUrls": ["$VERCEL_BRANCH_URL"],
     "store": {
       "adapter": "@upstash/redis",
