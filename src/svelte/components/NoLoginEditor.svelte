@@ -32,6 +32,15 @@
 
   let samplePanelOpen = true;
 
+  /** True when opening an existing Confluence macro (not a new diagram / sample). */
+  $: isEditingExistingDiagram =
+    Boolean(isEditMode) ||
+    Boolean(
+      existingDiagramData?.lastEdited ||
+        existingDiagramData?.isEditable === true ||
+        existingDiagramData?.isEditable === 'true',
+    );
+
   let showThemeDropdown = false;
   const MERMAID_THEMES = [
     { id: 'mc', name: 'Mermaid Chart' },
@@ -107,14 +116,16 @@
     let dataLoaded = false;
     
     if (existingDiagramData && existingDiagramData.diagramCode) {
-      analytics.trackDiagramEditedNoAuth();
-
+      // Prefill only — samples/templates stay insert mode (no lastEdited/isEditable).
+      // Existing macros from Confluence include lastEdited/isEditable or isEditMode from parent.
       code = existingDiagramData.diagramCode;
       if (existingDiagramData.size) size = existingDiagramData.size;
       if (existingDiagramData.caption) caption = existingDiagramData.caption;
       if (existingDiagramData.theme) theme = existingDiagramData.theme;
-      
-      isEditMode = true;
+      if (existingDiagramData.lastEdited || existingDiagramData.isEditable) {
+        isEditMode = true;
+      }
+
       isDataLoaded = true;
       dataLoaded = true;
   
@@ -145,7 +156,7 @@
         if (data.theme) theme = data.theme;
       });
     }
-    if (!isEditMode && !isDataLoaded && !code) {
+    if (!isEditingExistingDiagram && !isDataLoaded && !code) {
       code = DEFAULT_DIAGRAM;
       setTimeout(() => {
         if (editorComponent) {
@@ -155,7 +166,7 @@
     }
   });
 
-  async function handleInsert() {
+  async function handleSave() {
   
     if (isRendering) return;
     
@@ -165,8 +176,7 @@
       }
 
       const currentCode = editorComponent ? editorComponent.getValue() : code;
-        analytics.trackDiagramInsertedNoAuth();
-      
+
       if (!currentCode || currentCode.trim() === '') {
         throw new Error("Diagram code cannot be empty");
       }
@@ -183,23 +193,47 @@
         throw new Error("Failed to render diagram");
       }
       const pngBase64 = await generatePngFromMermaid(renderResult, '#ffffff', size);
+      // Same approach as collab `$lib/mermaid/detectDiagramType` → mermaid.detectType
+      let mcDiagramType = 'unknown';
+      try {
+        const detected = mermaidModule.detectType(currentCode);
+        if (detected === 'graph' || detected?.startsWith('flowchart')) {
+          mcDiagramType = 'flowchart';
+        } else if (detected === 'classDiagram') {
+          mcDiagramType = 'class';
+        } else if (detected) {
+          mcDiagramType = detected;
+        }
+      } catch {
+        mcDiagramType = 'unknown';
+      }
       const macroParams = {
         diagramCode: currentCode,
         size: size,
         caption: caption || '',
         theme: theme || 'default',
         diagramType: 'mermaid',
+        mcDiagramType,
         lastEdited: new Date().toISOString(),
         isEditable: true
       };
       await window.AP.confluence.saveMacro(macroParams, pngBase64);
-      
+      if (isEditingExistingDiagram) {
+        analytics.trackDiagramEditedNoAuth(mcDiagramType);
+      } else {
+        analytics.trackDiagramInsertedNoAuth(mcDiagramType);
+      }
+
       await new Promise(resolve => setTimeout(resolve, 800));
       window.AP.confluence.closeMacroEditor();
       
     } catch (err) {
-      console.error(`Error ${isEditMode ? 'updating' : 'inserting'} diagram:`, err);
-      error = `Error ${isEditMode ? 'updating' : 'inserting'} diagram: ` + err.message;
+      console.error(
+        `Error ${isEditingExistingDiagram ? 'updating' : 'inserting'} diagram:`,
+        err,
+      );
+      error =
+        `Error ${isEditingExistingDiagram ? 'updating' : 'inserting'} diagram: ` + err.message;
     } finally {
       isRendering = false;
     }
@@ -291,7 +325,7 @@
           </button>
         </div>
         <span>/</span>
-        <span class="text-[var(--Color-Deep-Purple-800,rgba(30,26,46,1))] " style="font-size: 16px; font-family: 'Recursive';">Editor</span>
+        <span class="text-[var(--Color-Deep-Purple-800,rgba(30,26,46,1))] " style="font-size: 16px; font-family: 'Recursive';">{isEditingExistingDiagram ? 'Edit diagram' : 'Insert diagram'}</span>
       </div>
     </div>
     
@@ -319,11 +353,21 @@
       style={!(isRendering || error || isCodeEmpty)
         ? 'background: var(--Color-Mermaid-Pink-500, rgba(224, 9, 95, 1));'
         : 'background: #f3f4f6; border-color: #d1d5db; color: #6b7280;'}
-      on:click={handleInsert}
+      on:click={handleSave}
       disabled={isRendering || !!error || isCodeEmpty}
-      title={isCodeEmpty ? 'Please add diagram code to insert' : isRendering ? 'Inserting diagram...' : error ? error : 'Insert diagram into Confluence'}
+      title={isCodeEmpty
+        ? 'Please add diagram code'
+        : isRendering
+          ? isEditingExistingDiagram
+            ? 'Saving diagram...'
+            : 'Inserting diagram...'
+          : error
+            ? error
+            : isEditingExistingDiagram
+              ? 'Save diagram to Confluence'
+              : 'Insert diagram into Confluence'}
     >
-      Insert diagram
+      {isEditingExistingDiagram ? 'Save diagram' : 'Insert diagram'}
     </button>
   {/if}
 

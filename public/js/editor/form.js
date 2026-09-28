@@ -53,6 +53,8 @@ export function Form({ mcAccessToken, user, onLogout }) {
         minor: saveData.minor,
         caption: saveData.caption,
         diagramCode: saveData.diagramCode,
+        // From collab `detectDiagramType` (mermaid.detectType) — not local regex
+        mcDiagramType: saveData.mcDiagramType || 'unknown',
         size: saveData.size
       };
 
@@ -68,8 +70,8 @@ export function Form({ mcAccessToken, user, onLogout }) {
         const totalSize = macroParamsSize + bodyDataSize;
 
         if (totalSize > sizeConfig.maxRequestSize) {
+          // Only compress the image body — diagramCode is Mermaid source text
           bodyDataToSave = await compressForConfluence(diagramImage);
-          macroParams.diagramCode = await compressForConfluence(saveData.diagramCode);
           const finalBodySize = calculateDataSize(bodyDataToSave);
           const finalParamsSize = calculateDataSize(macroParams);
           const finalTotalSize = finalBodySize + finalParamsSize;
@@ -132,7 +134,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
         const editUrl = buildUrl(
           `/app/projects/${params.projectID}/diagrams/${params.documentID}/version/v${params.major}.${params.minor}/edit?pluginSource=confluence`
         );
-        analytics.trackPluginDiagramEdit();
+        analytics.trackPluginDiagramEdit(params.mcDiagramType || 'unknown');
         setIframeURL(editUrl);
       }
     });

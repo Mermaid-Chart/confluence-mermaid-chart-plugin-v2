@@ -6,12 +6,12 @@ class Analytics {
     this.analyticsID = getAnalyticsID();
   }
 
-  sendEvent(eventName, eventID, userLoginState = false) {
+  sendEvent(eventName, eventID, userLoginState = false, diagramType = 'unknown') {
     const payload = {
       analyticsID: this.analyticsID,
       eventName,
       eventID,
-      diagramType: 'unknown',
+      diagramType: diagramType || 'unknown',
       userLoginState: userLoginState,
       diagramID: 'unknown',
       pluginSource: 'confluence'
@@ -30,26 +30,32 @@ class Analytics {
     );
   }
 
- trackDiagramInsertedNoAuth() {
+ trackDiagramInsertedNoAuth(diagramType) {
   this.sendEvent(
     'Plugin diagram insert',
-    'PLUGIN_DIAGRAM_INSERT'
+    'PLUGIN_DIAGRAM_INSERT',
+    false,
+    diagramType
   );
 }
 
  
-trackDiagramEditedNoAuth() {
+trackDiagramEditedNoAuth(diagramType) {
   this.sendEvent(
     'Plugin diagram edit',
-    'PLUGIN_DIAGRAM_EDIT'
+    'PLUGIN_DIAGRAM_EDIT',
+    false,
+    diagramType
   );
 }
 
-  trackPluginDiagramEdit(diagram) {
+  /** Prefer `mcDiagramType` from collab/`mermaid.detectType` — do not re-parse code here. */
+  trackPluginDiagramEdit(diagramType) {
     this.sendEvent(
       'Plugin diagram edit',
       'PLUGIN_DIAGRAM_EDIT',
-      true     
+      true,
+      diagramType
     );
   }
 
