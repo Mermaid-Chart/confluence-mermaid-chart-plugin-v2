@@ -20,8 +20,8 @@ function App() {
     useEffect(() => {
         if (window.AP && window.AP.confluence) {
             window.AP.confluence.getMacroData((data) => {
-                // No-auth macros only. Logged-in macros have documentID and must open
-                // the collab Form/iframe — their diagramCode may be image base64, not Mermaid.
+                // No-auth macros only (Mermaid in diagramCode). Logged-in macros use
+                // documentID + collab; their diagramCode is image base64 for preview.
                 if (data && data.diagramCode && !data.documentID) {
                     setIsEditingMermaidDiagram(true);
                     setExistingDiagramData({

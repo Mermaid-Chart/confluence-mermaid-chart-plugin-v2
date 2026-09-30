@@ -215,6 +215,8 @@
         diagramType: 'mermaid',
         mcDiagramType,
         lastEdited: new Date().toISOString(),
+        // Bust Confluence editor preview iframe cache after save (wired into viewer URL)
+        updatedAt: String(Date.now()),
         isEditable: true
       };
       await window.AP.confluence.saveMacro(macroParams, pngBase64);
