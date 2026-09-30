@@ -91,6 +91,9 @@ export default function routes(app, addon) {
   });
 
   app.get("/viewer", addon.authenticate(), (req, res) => {
+    // Prevent browser/CDN caching of macro preview after diagram switch
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.set("Pragma", "no-cache");
     res.render("viewer.hbs");
   });
 

@@ -20,9 +20,16 @@ function App() {
     useEffect(() => {
         if (window.AP && window.AP.confluence) {
             window.AP.confluence.getMacroData((data) => {
-                if (data && data.diagramType === 'mermaid' && data.diagramCode) {
+                // No-auth macros only (Mermaid in diagramCode). Logged-in macros use
+                // documentID + collab; their diagramCode is image base64 for preview.
+                if (data && data.diagramCode && !data.documentID) {
                     setIsEditingMermaidDiagram(true);
-                    setExistingDiagramData(data);
+                    setExistingDiagramData({
+                        ...data,
+                        diagramType: data.diagramType || 'mermaid',
+                        isEditable: data.isEditable ?? true,
+                        lastEdited: data.lastEdited || new Date().toISOString(),
+                    });
                     setShowNoLoginEditor(true);
                 }
             });

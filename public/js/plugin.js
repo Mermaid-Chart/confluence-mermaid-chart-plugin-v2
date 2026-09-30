@@ -4,7 +4,8 @@ class CPlugin {
     window.parent.postMessage(data, "*");
   }
   saveData(data) {
-    if (!data.documentID || !data.diagramCode) {
+    // Image may be in diagramImage only (preferred). diagramCode kept for older collab clients.
+    if (!data.documentID || !(data.diagramImage || data.diagramCode)) {
       throw new Error("Invalid saving diagram data");
     }
     this._sendMessage({
