@@ -17,15 +17,60 @@
     import {IMAGE_SIZES} from '/js/constatnts.js';
     import { getImageDataURI } from '/js/imageUtils.js';
     const imageContainer = document.getElementById('image');
+
+    function looksLikeImagePayload(text) {
+        if (!text || typeof text !== 'string') {
+            return false;
+        }
+        const t = text.trim();
+        if (t.startsWith('data:image') || t.startsWith('PHN2Zy') || t.startsWith('iVBOR')) {
+            return true;
+        }
+        // Long base64 without mermaid keywords
+        if (t.length > 200 && !/^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram)/i.test(t)) {
+            return /^[A-Za-z0-9+/=\s]+$/.test(t.slice(0, 80));
+        }
+        return false;
+    }
+
+    function showImage(payload) {
+        if (!payload) {
+            return;
+        }
+        const src = getImageDataURI(payload);
+        if (!src) {
+            return;
+        }
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = 'Mermaid diagram';
+        imageContainer.replaceChildren(img);
+    }
+
+    let bodyImage = null;
+    let paramImage = null;
+
     AP.confluence.getMacroBody((macroBody) => {
-        const img = document.createElement("img")
-        img.src = getImageDataURI(macroBody);
-        imageContainer.appendChild(img);
+        bodyImage = macroBody;
+        if (macroBody) {
+            showImage(macroBody);
+        } else if (paramImage) {
+            showImage(paramImage);
+        }
     });
+
     AP.confluence.getMacroData(async (data) => {
         if (data.caption) {
             document.getElementById('caption').innerText = data.caption;
         }
         imageContainer.style.width = `${IMAGE_SIZES[data.size || "small"].width}px`;
+
+        // Fallback when macro body is empty: use diagramCode if it still holds image base64
+        if (looksLikeImagePayload(data.diagramCode)) {
+            paramImage = data.diagramCode;
+            if (!bodyImage) {
+                showImage(paramImage);
+            }
+        }
     });
 </script>

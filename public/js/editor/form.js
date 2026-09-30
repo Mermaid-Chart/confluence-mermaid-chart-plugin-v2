@@ -4,9 +4,30 @@ import htm from "https://esm.sh/htm";
 import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
 import { compressForConfluence, sizeConfig, calculateDataSize, extractBase64ForMacroBody } from "/js/imageUtils.js";
-import analytics from "../lib/analytics.js";
 
 const html = htm.bind(h);
+
+/** True when diagramCode looks like Mermaid text, not PNG/SVG base64. */
+function looksLikeMermaidSource(value) {
+  if (!value || typeof value !== "string") {
+    return false;
+  }
+  const text = value.trim();
+  if (text.startsWith("data:") || text.startsWith("<svg") || text.startsWith("<?xml")) {
+    return false;
+  }
+  // Image base64 (e.g. PHN2Zy… for SVG) has no mermaid keywords on the first line
+  const firstLine = text
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line && !line.startsWith("%%") && !line.startsWith("---"));
+  if (!firstLine) {
+    return false;
+  }
+  return /^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|mindmap|timeline|quadrantChart|requirementDiagram|C4|sankey|xychart|block|packet|kanban|architecture|zenuml)/i.test(
+    firstLine,
+  );
+}
 
 function getLocationWithTimeout(timeout) {
   return new Promise((resolve, reject) => {
@@ -42,18 +63,37 @@ export function Form({ mcAccessToken, user, onLogout }) {
       setIsSaving(true);
 
       const { diagramImage: rawImage, ...saveData } = dataRef.current;
-      const diagramImage =
+      // Prefer diagramImage; fall back to legacy image-in-diagramCode from older collab clients
+      const imageCandidate =
         rawImage != null && rawImage !== ""
-          ? extractBase64ForMacroBody(rawImage) || rawImage
-          : rawImage;
+          ? rawImage
+          : typeof saveData.diagramCode === "string" &&
+              !looksLikeMermaidSource(saveData.diagramCode)
+            ? saveData.diagramCode
+            : rawImage;
+      const diagramImage =
+        imageCandidate != null && imageCandidate !== ""
+          ? extractBase64ForMacroBody(imageCandidate) || imageCandidate
+          : imageCandidate;
+
+      const mermaidSource =
+        saveData.mcSourceCode ||
+        (looksLikeMermaidSource(saveData.diagramCode) ? saveData.diagramCode : "") ||
+        "";
+
+      // Image only in macro body — do not also store it in diagramCode (avoids 2x payload).
+      // Omit diagramCode so re-save drops legacy image-in-param from older macros.
       const macroParams = {
         documentID: saveData.documentID,
         projectID: saveData.projectID,
         major: saveData.major,
         minor: saveData.minor,
         caption: saveData.caption,
-        diagramCode: saveData.diagramCode,
-        size: saveData.size
+        mcSourceCode: mermaidSource,
+        mcDiagramType: saveData.mcDiagramType || "unknown",
+        size: saveData.size,
+        // Bust Confluence editor preview iframe cache after save (wired into viewer URL)
+        updatedAt: String(Date.now()),
       };
 
       if (window.AP.dialog.getButton) {
@@ -69,7 +109,6 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
         if (totalSize > sizeConfig.maxRequestSize) {
           bodyDataToSave = await compressForConfluence(diagramImage);
-          macroParams.diagramCode = await compressForConfluence(saveData.diagramCode);
           const finalBodySize = calculateDataSize(bodyDataToSave);
           const finalParamsSize = calculateDataSize(macroParams);
           const finalTotalSize = finalBodySize + finalParamsSize;
@@ -77,6 +116,10 @@ export function Form({ mcAccessToken, user, onLogout }) {
             throw new Error(`Diagram is too complex (${(finalTotalSize / 1024).toFixed(2)}KB). Try simplifying your diagram or reducing the number of elements.`);
           }
         }
+      }
+
+      if (!bodyDataToSave) {
+        throw new Error("Missing diagram image — cannot save empty preview to Confluence.");
       }
 
       await window.AP.confluence.saveMacro(macroParams, bodyDataToSave);
@@ -132,7 +175,7 @@ export function Form({ mcAccessToken, user, onLogout }) {
         const editUrl = buildUrl(
           `/app/projects/${params.projectID}/diagrams/${params.documentID}/version/v${params.major}.${params.minor}/edit?pluginSource=confluence`
         );
-        analytics.trackPluginDiagramEdit();
+        // Edit/insert Mixpanel events fire on collab save (not on open) to match no-auth
         setIframeURL(editUrl);
       }
     });
