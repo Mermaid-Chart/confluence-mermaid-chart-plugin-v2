@@ -36,12 +36,13 @@
           "height": 80,
           "url": "/icon_80x80.png"
         },
-        "url": "/viewer",
+        "url": "/viewer?updated={updatedAt}",
         "description": {
           "value": "Insert Mermaid chart diagram"
         },
         "outputType": "block",
         "bodyType": "plain-text",
+        "cacheable": false,
         "editor": {
           "url": "/editor",
           "width": "100%",
