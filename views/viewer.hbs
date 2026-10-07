@@ -8,14 +8,26 @@
         display: flex;
         align-items: center;
         flex-direction: column;
+        min-height: 1px;
     }
-    #content #image img {
+    #content #image {
         width: 100%;
+        line-height: 0;
+        min-height: 1px;
+    }
+    /* Root diagram only. A blanket `svg` rule also stretches nested
+       .label-icon SVGs (fa:fa-car) to the full label width. */
+    #content #image > img,
+    #content #image > .svg-inline > svg {
+        width: 100%;
+        height: auto;
+        display: block;
+        max-width: 100%;
     }
 </style>
 <script type="module">
     import {IMAGE_SIZES} from '/js/constatnts.js';
-    import { getImageDataURI } from '/js/imageUtils.js';
+    import { getImageDataURI, getSvgMarkupForPreview, ensureSvgPixelDimensions } from '/js/imageUtils.js?v=label-icon-2';
     const imageContainer = document.getElementById('image');
 
     function looksLikeImagePayload(text) {
@@ -23,54 +35,144 @@
             return false;
         }
         const t = text.trim();
-        if (t.startsWith('data:image') || t.startsWith('PHN2Zy') || t.startsWith('iVBOR')) {
+        if (t.startsWith('data:image') || t.startsWith('PHN2Zy') || t.startsWith('iVBOR') || t.startsWith('<svg')) {
             return true;
         }
-        // Long base64 without mermaid keywords
         if (t.length > 200 && !/^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram)/i.test(t)) {
             return /^[A-Za-z0-9+/=\s]+$/.test(t.slice(0, 80));
         }
         return false;
     }
 
-    function showImage(payload) {
-        if (!payload) {
+    function resolveSizeWidth(size) {
+        const key = size && IMAGE_SIZES[size] ? size : 'Medium';
+        return (IMAGE_SIZES[key] || IMAGE_SIZES.Medium || IMAGE_SIZES.Small).width;
+    }
+
+    function resizeHost() {
+        if (!(window.AP && typeof AP.resize === 'function')) {
             return;
         }
+        try {
+            const svg = imageContainer?.querySelector('svg');
+            const vb = svg?.viewBox?.baseVal;
+            const viewBoxFloor = vb && vb.height > 0 ? Math.ceil(vb.height) : 0;
+            const height = Math.max(
+                document.documentElement.scrollHeight || 0,
+                document.body?.scrollHeight || 0,
+                imageContainer?.scrollHeight || 0,
+                viewBoxFloor,
+                40,
+            );
+            AP.resize('100%', height);
+        } catch {
+            try {
+                AP.resize();
+            } catch {
+                // ignore
+            }
+        }
+    }
+
+    function scheduleResize() {
+        requestAnimationFrame(() => {
+            resizeHost();
+            requestAnimationFrame(resizeHost);
+            setTimeout(resizeHost, 50);
+            setTimeout(resizeHost, 250);
+        });
+    }
+
+    /**
+     * Mount SVG via image/svg+xml parser — HTML innerHTML mangles foreignObject
+     * + nested label-icon SVGs (FA icons like fa:fa-car).
+     */
+    function mountInlineSvg(svgMarkup) {
+        const doc = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml');
+        if (doc.querySelector('parsererror')) {
+            return null;
+        }
+        const root = doc.documentElement;
+        if (!root || root.localName.toLowerCase() !== 'svg') {
+            return null;
+        }
+        return document.importNode(root, true);
+    }
+
+    function showImage(payload) {
+        if (!payload || !String(payload).trim()) {
+            return false;
+        }
+
+        // Prefer inline SVG with pixel dimensions from viewBox — <img> + width=100%
+        // SVGs collapse to blank boxes inside Confluence iframes.
+        let svgMarkup = getSvgMarkupForPreview(payload);
+        if (svgMarkup) {
+            svgMarkup = ensureSvgPixelDimensions(svgMarkup);
+            const svg = mountInlineSvg(svgMarkup);
+            if (svg) {
+                const vb = svg.viewBox?.baseVal;
+                if (vb && vb.width > 0 && vb.height > 0) {
+                    svg.setAttribute('width', String(vb.width));
+                    svg.setAttribute('height', String(vb.height));
+                }
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.setAttribute(
+                    'preserveAspectRatio',
+                    svg.getAttribute('preserveAspectRatio') || 'xMidYMid meet',
+                );
+                const wrap = document.createElement('div');
+                wrap.className = 'svg-inline';
+                wrap.appendChild(svg);
+                imageContainer.replaceChildren(wrap);
+                scheduleResize();
+                return true;
+            }
+        }
+
         const src = getImageDataURI(payload);
         if (!src) {
-            return;
+            return false;
         }
         const img = document.createElement('img');
         img.src = src;
         img.alt = 'Mermaid diagram';
+        img.onload = scheduleResize;
+        img.onerror = scheduleResize;
         imageContainer.replaceChildren(img);
+        scheduleResize();
+        return true;
     }
 
-    let bodyImage = null;
-    let paramImage = null;
+    // Macro params win over getMacroBody: right after "Save changes" in the editor,
+    // getMacroBody can still return the previous body while params (diagramCode,
+    // updatedAt) are already the new save.
+    let shownFromParams = false;
+    let shownFromBody = false;
+
+    function tryShow(payload) {
+        return looksLikeImagePayload(payload) && showImage(payload);
+    }
 
     AP.confluence.getMacroBody((macroBody) => {
-        bodyImage = macroBody;
-        if (macroBody) {
-            showImage(macroBody);
-        } else if (paramImage) {
-            showImage(paramImage);
+        if (shownFromParams || shownFromBody) {
+            return;
         }
+        shownFromBody = tryShow(macroBody);
     });
 
     AP.confluence.getMacroData(async (data) => {
         if (data.caption) {
             document.getElementById('caption').innerText = data.caption;
         }
-        imageContainer.style.width = `${IMAGE_SIZES[data.size || "small"].width}px`;
+        imageContainer.style.width = `${resolveSizeWidth(data.size)}px`;
 
-        // Fallback when macro body is empty: use diagramCode if it still holds image base64
-        if (looksLikeImagePayload(data.diagramCode)) {
-            paramImage = data.diagramCode;
-            if (!bodyImage) {
-                showImage(paramImage);
-            }
-        }
+        shownFromParams =
+            tryShow(data.diagramCode) ||
+            tryShow(data.diagramImage) ||
+            tryShow(data.__bodyContent);
+
+        scheduleResize();
     });
 </script>
