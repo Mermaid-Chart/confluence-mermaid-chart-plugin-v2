@@ -27,7 +27,7 @@
 </style>
 <script type="module">
     import {IMAGE_SIZES} from '/js/constatnts.js';
-    import { getImageDataURI, getSvgMarkupForPreview, ensureSvgPixelDimensions } from '/js/imageUtils.js?v=label-icon-2';
+    import { getImageDataURI, getSvgMarkupForPreview, ensureSvgPixelDimensions, sanitizeSvgRoot } from '/js/imageUtils.js?v=label-icon-3';
     const imageContainer = document.getElementById('image');
 
     function looksLikeImagePayload(text) {
@@ -96,6 +96,7 @@
         if (!root || root.localName.toLowerCase() !== 'svg') {
             return null;
         }
+        sanitizeSvgRoot(root);
         return document.importNode(root, true);
     }
 

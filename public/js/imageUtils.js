@@ -14,6 +14,100 @@ function utf8FromBase64(b64) {
   return decodeURIComponent(escape(atob(b64)));
 }
 
+/** Preview decode. Saved SVG is UTF-8; bare atob turns "Über" into "Ãœber". */
+function decodeSvgBase64(b64) {
+  try {
+    return utf8FromBase64(b64);
+  } catch {
+    try {
+      return atob(b64);
+    } catch {
+      return null;
+    }
+  }
+}
+
+const UNSAFE_SVG_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'link', 'meta', 'base']);
+
+function isDangerousSvgUrl(value) {
+  if (!value) {
+    return false;
+  }
+  const normalized = String(value).replace(/[\u0000-\u0020]+/g, '').toLowerCase();
+  return (
+    normalized.startsWith('javascript:') ||
+    normalized.startsWith('vbscript:') ||
+    (normalized.startsWith('data:') && !normalized.startsWith('data:image/'))
+  );
+}
+
+/**
+ * Inline SVG is live DOM, so event handlers and script tags would run in the
+ * viewer iframe. Drop those and keep foreignObject (labels and FA icons).
+ * @param {Element} root
+ */
+export function sanitizeSvgRoot(root) {
+  const nodes = [root, ...root.querySelectorAll('*')];
+  for (const el of nodes) {
+    if (!el.isConnected && el !== root) {
+      continue;
+    }
+    const tag = (el.localName || '').toLowerCase();
+    if (UNSAFE_SVG_TAGS.has(tag)) {
+      el.remove();
+      continue;
+    }
+    const animatedAttr = el.getAttribute('attributeName');
+    if (animatedAttr && /^on/i.test(animatedAttr)) {
+      el.remove();
+      continue;
+    }
+    if (
+      animatedAttr &&
+      /^(href|xlink:href)$/i.test(animatedAttr) &&
+      (isDangerousSvgUrl(el.getAttribute('to')) || isDangerousSvgUrl(el.getAttribute('values')))
+    ) {
+      el.remove();
+      continue;
+    }
+    for (const attr of [...el.attributes]) {
+      const name = attr.name.toLowerCase();
+      const local = (attr.localName || attr.name).toLowerCase();
+      if (name.startsWith('on') || local.startsWith('on')) {
+        el.removeAttribute(attr.name);
+        continue;
+      }
+      if ((local === 'href' || local === 'src' || name === 'xlink:href') && isDangerousSvgUrl(attr.value)) {
+        el.removeAttribute(attr.name);
+      }
+    }
+  }
+}
+
+/**
+ * @param {string} svgMarkup
+ * @returns {string|null}
+ */
+export function sanitizeSvgMarkup(svgMarkup) {
+  if (!svgMarkup || typeof svgMarkup !== 'string' || typeof DOMParser === 'undefined') {
+    return svgMarkup;
+  }
+  try {
+    const doc = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml');
+    if (doc.querySelector('parsererror')) {
+      return null;
+    }
+    const root = doc.documentElement;
+    if (!root || root.localName.toLowerCase() !== 'svg') {
+      return null;
+    }
+    sanitizeSvgRoot(root);
+    return new XMLSerializer().serializeToString(root);
+  } catch {
+    return null;
+  }
+}
+
 /** Decode SVG base64, bake pixel dimensions, re-encode. Falls back to raw on failure. */
 function normalizeSvgBase64(rawBase64) {
   const raw = rawBase64.replace(/\s/g, '');
@@ -58,9 +152,34 @@ function normalizeLabelIconCss(svgMarkup) {
   );
 }
 
+/** Inner markup of the div that starts at `contentStart`, honoring nested divs. */
+function divInnerContent(markup, contentStart) {
+  let depth = 1;
+  let index = contentStart;
+  const lower = markup.toLowerCase();
+  while (index < markup.length && depth > 0) {
+    const nextOpen = lower.indexOf('<div', index);
+    const nextClose = lower.indexOf('</div', index);
+    if (nextClose === -1) {
+      return markup.slice(contentStart);
+    }
+    if (nextOpen !== -1 && nextOpen < nextClose) {
+      depth += 1;
+      index = nextOpen + 4;
+      continue;
+    }
+    depth -= 1;
+    if (depth === 0) {
+      return markup.slice(contentStart, nextClose);
+    }
+    index = nextClose + 6;
+  }
+  return markup.slice(contentStart);
+}
+
 /**
- * XHTML label divs inside foreignObject often omit font-size; without it, 1em
- * icons have no useful reference. Prepend a stable font-size when missing.
+ * FA icons use height:1em. Only the label that contains a .label-icon gets a
+ * fixed font-size, so other labels keep the diagram stylesheet / theme size.
  * @param {string} svgMarkup
  * @returns {string}
  */
@@ -69,8 +188,16 @@ function ensureForeignObjectLabelFontSize(svgMarkup) {
   const repaired = svgMarkup.replace(/font-size:\s*(\d+)px(?=[a-zA-Z])/gi, 'font-size: $1px;');
   return repaired.replace(
     /(<div\b[^>]*\bxmlns=["']http:\/\/www\.w3\.org\/1999\/xhtml["'][^>]*\bstyle=["'])([^"']*)(["'])/gi,
-    (full, open, style, close) => {
+    (full, open, style, close, offset, whole) => {
+      const content = divInnerContent(whole, offset + full.length);
+      const hasIcon = /label-icon/i.test(content);
       if (/\bfont-size\s*:/i.test(style)) {
+        if (!hasIcon && /^font-size:\s*14px;?\s*/i.test(style)) {
+          return `${open}${style.replace(/^font-size:\s*14px;?\s*/i, '')}${close}`;
+        }
+        return full;
+      }
+      if (!hasIcon) {
         return full;
       }
       const prefix = style.trim() ? `font-size: ${LABEL_ICON_PX}px;` : `font-size: ${LABEL_ICON_PX}px`;
@@ -277,7 +404,7 @@ export function getSvgMarkupForPreview(input) {
   }
   const s = input.trim();
   if (s.startsWith('<') && /<svg[\s>/]/i.test(s)) {
-    return s;
+    return sanitizeSvgMarkup(s);
   }
   if (s.startsWith('data:')) {
     const comma = s.indexOf(',');
@@ -290,14 +417,11 @@ export function getSvgMarkupForPreview(input) {
       return null;
     }
     if (header.includes('base64')) {
-      try {
-        return atob(body);
-      } catch {
-        return null;
-      }
+      const decoded = decodeSvgBase64(body);
+      return decoded ? sanitizeSvgMarkup(decoded) : null;
     }
     try {
-      return decodeURIComponent(body);
+      return sanitizeSvgMarkup(decodeURIComponent(body));
     } catch {
       return null;
     }
@@ -305,11 +429,8 @@ export function getSvgMarkupForPreview(input) {
   if (detectImageFormat(s) !== 'svg') {
     return null;
   }
-  try {
-    return atob(s);
-  } catch {
-    return null;
-  }
+  const decoded = decodeSvgBase64(s);
+  return decoded ? sanitizeSvgMarkup(decoded) : null;
 }
 
 /**

@@ -8,7 +8,7 @@ import {
   sizeConfig,
   calculateDataSize,
   extractBase64ForMacroBody,
-} from "/js/imageUtils.js?v=label-icon-2";
+} from "/js/imageUtils.js?v=label-icon-3";
 
 const html = htm.bind(h);
 

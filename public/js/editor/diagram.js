@@ -1,7 +1,7 @@
 import { h } from 'https://esm.sh/preact';
 import htm from 'https://esm.sh/htm';
 import { useEffect, useRef } from 'https://esm.sh/preact/hooks';
-import { getImageDataURI, getSvgMarkupForPreview } from '/js/imageUtils.js';
+import { getImageDataURI, getSvgMarkupForPreview } from '/js/imageUtils.js?v=label-icon-3';
 
 const html = htm.bind(h);
 
