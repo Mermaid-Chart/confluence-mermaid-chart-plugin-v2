@@ -8,7 +8,7 @@ import {
   sizeConfig,
   calculateDataSize,
   extractBase64ForMacroBody,
-} from "/js/imageUtils.js?v=svg-sanitize-1";
+} from "/js/imageUtils.js?v=svg-sanitize-3";
 
 const html = htm.bind(h);
 

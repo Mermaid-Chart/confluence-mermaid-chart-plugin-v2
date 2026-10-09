@@ -48,6 +48,31 @@ export function installSvgSanitizer(purify) {
 }
 
 /**
+ * Mermaid and older saves sometimes use HTML inside the SVG (`<br>`, `&nbsp;`).
+ * Those are not XML, so image/svg+xml rejects the whole diagram.
+ */
+function repairHtmlInSvg(markup) {
+  return markup
+    .replace(/&nbsp;/gi, '&#160;')
+    .replace(/<br\b([^>]*?)\/?>/gi, (_, attrs) => `<br${attrs}/>`);
+}
+
+/** Nested label-icon SVGs often omit xmlns. XML then treats them as HTML, and DOMPurify drops them. */
+function withNestedSvgNamespace(svgMarkup) {
+  let first = true;
+  return svgMarkup.replace(/<svg\b[^>]*>/gi, (tag) => {
+    if (first) {
+      first = false;
+      return tag;
+    }
+    if (/\bxmlns\s*=/i.test(tag)) {
+      return tag;
+    }
+    return tag.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+  });
+}
+
+/**
  * @param {string} svgMarkup
  * @returns {string|null}
  */
@@ -55,15 +80,21 @@ export function sanitizeSvgMarkup(svgMarkup) {
   if (!svgMarkup || typeof svgMarkup !== 'string') {
     return svgMarkup;
   }
-  if (!svgPurify || typeof svgPurify.sanitize !== 'function') {
+  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') {
     return null;
   }
   try {
-    const clean = svgPurify.sanitize(svgMarkup, SVG_PURIFY_CONFIG);
-    if (!clean || !/<svg[\s>/]/i.test(clean)) {
+    // Sanitize the SVG node, then serialize as XML. DOMPurify's string result
+    // is HTML (<br>, &nbsp;), and the viewer parses that as image/svg+xml.
+    const doc = new DOMParser().parseFromString(
+      withNestedSvgNamespace(repairHtmlInSvg(svgMarkup)),
+      'image/svg+xml',
+    );
+    if (doc.querySelector('parsererror')) {
       return null;
     }
-    return clean;
+    const clean = sanitizeSvgRoot(doc.documentElement);
+    return clean ? new XMLSerializer().serializeToString(clean) : null;
   } catch {
     return null;
   }
