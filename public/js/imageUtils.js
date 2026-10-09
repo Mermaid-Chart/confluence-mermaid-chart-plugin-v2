@@ -27,61 +27,24 @@ function decodeSvgBase64(b64) {
   }
 }
 
-const UNSAFE_SVG_TAGS = new Set(['script', 'iframe', 'object', 'embed', 'link', 'meta', 'base']);
-
-function isDangerousSvgUrl(value) {
-  if (!value) {
-    return false;
-  }
-  const normalized = String(value).replace(/[\u0000-\u0020]+/g, '').toLowerCase();
-  return (
-    normalized.startsWith('javascript:') ||
-    normalized.startsWith('vbscript:') ||
-    (normalized.startsWith('data:') && !normalized.startsWith('data:image/'))
-  );
-}
-
 /**
- * Inline SVG is live DOM, so event handlers and script tags would run in the
- * viewer iframe. Drop those and keep foreignObject (labels and FA icons).
- * @param {Element} root
+ * DOMPurify drops HTML inside <foreignObject> unless that tag is an HTML
+ * integration point. Labels and FA icons live there, so it has to stay.
+ * Forms and buttons are not part of a diagram; they were the remaining click-to-script path.
  */
-export function sanitizeSvgRoot(root) {
-  const nodes = [root, ...root.querySelectorAll('*')];
-  for (const el of nodes) {
-    if (!el.isConnected && el !== root) {
-      continue;
-    }
-    const tag = (el.localName || '').toLowerCase();
-    if (UNSAFE_SVG_TAGS.has(tag)) {
-      el.remove();
-      continue;
-    }
-    const animatedAttr = el.getAttribute('attributeName');
-    if (animatedAttr && /^on/i.test(animatedAttr)) {
-      el.remove();
-      continue;
-    }
-    if (
-      animatedAttr &&
-      /^(href|xlink:href)$/i.test(animatedAttr) &&
-      (isDangerousSvgUrl(el.getAttribute('to')) || isDangerousSvgUrl(el.getAttribute('values')))
-    ) {
-      el.remove();
-      continue;
-    }
-    for (const attr of [...el.attributes]) {
-      const name = attr.name.toLowerCase();
-      const local = (attr.localName || attr.name).toLowerCase();
-      if (name.startsWith('on') || local.startsWith('on')) {
-        el.removeAttribute(attr.name);
-        continue;
-      }
-      if ((local === 'href' || local === 'src' || name === 'xlink:href') && isDangerousSvgUrl(attr.value)) {
-        el.removeAttribute(attr.name);
-      }
-    }
-  }
+const SVG_PURIFY_CONFIG = {
+  USE_PROFILES: { svg: true, svgFilters: true, html: true },
+  ADD_TAGS: ['foreignObject'],
+  HTML_INTEGRATION_POINTS: { foreignobject: true },
+  FORBID_TAGS: ['form', 'button', 'input', 'textarea', 'select', 'option'],
+};
+
+/** @type {{ sanitize: Function } | null} */
+let svgPurify = null;
+
+/** Call once from the browser before any SVG is inserted into the page. */
+export function installSvgSanitizer(purify) {
+  svgPurify = purify || null;
 }
 
 /**
@@ -89,20 +52,38 @@ export function sanitizeSvgRoot(root) {
  * @returns {string|null}
  */
 export function sanitizeSvgMarkup(svgMarkup) {
-  if (!svgMarkup || typeof svgMarkup !== 'string' || typeof DOMParser === 'undefined') {
+  if (!svgMarkup || typeof svgMarkup !== 'string') {
     return svgMarkup;
   }
+  if (!svgPurify || typeof svgPurify.sanitize !== 'function') {
+    return null;
+  }
   try {
-    const doc = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml');
-    if (doc.querySelector('parsererror')) {
+    const clean = svgPurify.sanitize(svgMarkup, SVG_PURIFY_CONFIG);
+    if (!clean || !/<svg[\s>/]/i.test(clean)) {
       return null;
     }
-    const root = doc.documentElement;
-    if (!root || root.localName.toLowerCase() !== 'svg') {
+    return clean;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Last step before an SVG node joins the page.
+ * @param {Element} root
+ * @returns {Element|null}
+ */
+export function sanitizeSvgRoot(root) {
+  if (!root || !svgPurify || typeof svgPurify.sanitize !== 'function') {
+    return null;
+  }
+  try {
+    const clean = svgPurify.sanitize(root, { ...SVG_PURIFY_CONFIG, IN_PLACE: true });
+    if (!clean || String(clean.localName || '').toLowerCase() !== 'svg') {
       return null;
     }
-    sanitizeSvgRoot(root);
-    return new XMLSerializer().serializeToString(root);
+    return clean;
   } catch {
     return null;
   }

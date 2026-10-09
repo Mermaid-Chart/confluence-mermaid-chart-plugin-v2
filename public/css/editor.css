@@ -351,12 +351,16 @@ iframe {
 
 .chart-options-single {
   max-width: 420px;
-  margin: 0 auto;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .chart-options-single .chart-option-column {
   flex: none;
   width: 100%;
+  align-items: center;
+  text-align: center;
 }
 
 .chart-option-column {
@@ -410,6 +414,14 @@ iframe {
 .primary-button:hover {
   background-color: #d81b60;
   transform: translateY(-1px);
+}
+
+#login-button {
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  justify-content: center;
 }
 
 .secondary-button {

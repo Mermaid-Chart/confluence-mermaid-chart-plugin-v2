@@ -124,6 +124,23 @@ app.use(addon.middleware());
 const staticDir = path.join(process.cwd(), "public");
 app.use(express.static(staticDir));
 
+// DOMPurify is loaded by the viewer as a same-origin module. A CDN copy can be
+// blocked by the Confluence iframe, and the hand-rolled SVG cleaner missed
+// form and animate script paths.
+const purifyDir = path.dirname(
+  createRequire(import.meta.url).resolve("dompurify")
+);
+app.use(
+  "/vendor/dompurify",
+  express.static(purifyDir, {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith(".mjs")) {
+        res.setHeader("Content-Type", "text/javascript; charset=utf-8");
+      }
+    },
+  })
+);
+
 // Mount the dist directory for Svelte build output
 const distDir = path.join(process.cwd(), "dist");
 app.use('/dist', express.static(distDir));

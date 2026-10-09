@@ -1,7 +1,10 @@
 import { h } from 'https://esm.sh/preact';
 import htm from 'https://esm.sh/htm';
 import { useEffect, useRef } from 'https://esm.sh/preact/hooks';
-import { getImageDataURI, getSvgMarkupForPreview } from '/js/imageUtils.js?v=label-icon-3';
+import DOMPurify from '/vendor/dompurify/purify.es.mjs';
+import { getImageDataURI, getSvgMarkupForPreview, installSvgSanitizer } from '/js/imageUtils.js?v=svg-sanitize-1';
+
+installSvgSanitizer(DOMPurify);
 
 const html = htm.bind(h);
 
