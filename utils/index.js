@@ -38,11 +38,14 @@ const saveToken = async (httpClient, atlassianAccountId, token) => {
             if (err || res.statusCode > 399) {
                 httpClient.asUserByAccountId(atlassianAccountId).post(requestOpt, (err2, res2, body2) => {
                     console.log("post", err2, body2);
-                    if (err2 || res2.statusCode !== 200) {
+                    // Confluence returns 201 Created for new user properties
+                    if (err2 || res2.statusCode > 399) {
                         console.error('Failed on saving user property "token"', err2, res2.statusCode);
-                        return reject(err);
+                        return reject(err2 || err);
                     }
+                    resolve(token);
                 });
+                return;
             }
             resolve(token);
         });

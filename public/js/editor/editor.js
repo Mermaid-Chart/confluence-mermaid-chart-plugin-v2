@@ -1,142 +1,51 @@
 import {h, render} from 'https://esm.sh/preact';
-import {useState, useEffect} from 'https://esm.sh/preact/hooks';
+import {useState} from 'https://esm.sh/preact/hooks';
 import htm from 'https://esm.sh/htm';
 import {Login} from './login.js';
 import {Form} from './form.js';
-import {SvelteEditorWrapper} from './svelteEditorWrapper.js';
-import {DiagramSelector} from './diagramSelector.js';
-import {getSampleDiagrams} from "/js/mermaid.js";
-import analytics from '../lib/analytics.js';
 
 const html = htm.bind(h);
 
 function App() {
     const [accessToken, setAccessToken] = useState(mcAccessToken);
     const [user, setUser] = useState(loggedUser);
-    const [showNoLoginEditor, setShowNoLoginEditor] = useState(false);
-    const [showDiagramSelector, setShowDiagramSelector] = useState(false);
-    const [isEditingMermaidDiagram, setIsEditingMermaidDiagram] = useState(false);
-    const [existingDiagramData, setExistingDiagramData] = useState(null);
-    useEffect(() => {
-        if (window.AP && window.AP.confluence) {
-            window.AP.confluence.getMacroData((data) => {
-                // No-auth macros only (Mermaid in diagramCode). Logged-in macros use
-                // documentID + collab; their diagramCode is image base64 for preview.
-                if (data && data.diagramCode && !data.documentID) {
-                    setIsEditingMermaidDiagram(true);
-                    setExistingDiagramData({
-                        ...data,
-                        diagramType: data.diagramType || 'mermaid',
-                        isEditable: data.isEditable ?? true,
-                        lastEdited: data.lastEdited || new Date().toISOString(),
-                    });
-                    setShowNoLoginEditor(true);
-                }
-            });
-        }
-    }, []);
 
-    const onLogin = (token, user) => {
+    const onLogin = (token, nextUser) => {
         setAccessToken(token);
-        setUser(user);
-    }
-    
+        setUser(nextUser);
+    };
+
     const onCancel = () => {
         if (window.AP && window.AP.confluence) {
             window.AP.confluence.closeMacroEditor();
         } else if (window.CP) {
             window.CP.cancel();
         }
-    }
-    
+    };
+
     const onLogout = async () => {
         await fetch('/logout', {
-                method: 'post',
-                headers: {
-                    Authorization: `JWT ${JWTToken}`,
-                },
-            });
-        setAccessToken(undefined)
-        setUser(null)
-    }
-    
-    const onOpenDiagramSelector = () => {
-        analytics.trackEditorOpenedNoAuth();
-        setShowDiagramSelector(true);
-        return false;
-    }
-
-    const onSelectDiagram = (diagram) => {
-        setExistingDiagramData({
-            diagramCode: diagram.code,
-            diagramType: 'mermaid',
-            size: 'medium'
+            method: 'post',
+            headers: {
+                Authorization: `JWT ${JWTToken}`,
+            },
         });
-        setShowDiagramSelector(false);
-        setShowNoLoginEditor(true);
-    }
-
-    const onCloseDiagramSelector = () => {
-        setShowDiagramSelector(false);
-    }
-    
-    const onNoLoginClick = (diagramType = null) => {
-        if (diagramType) {
-            try {
-                const sampleDiagrams = getSampleDiagrams();
-                const diagramCode = sampleDiagrams[diagramType] || sampleDiagrams['flowchart'] || '';
-                setExistingDiagramData({
-                    diagramCode: diagramCode,
-                    diagramType: 'mermaid',
-                    size: 'medium'
-                });
-            } catch (error) {
-                console.error('Error loading diagram templates:', error);
-                setExistingDiagramData({
-                    diagramCode: '',
-                    diagramType: 'mermaid',
-                    size: 'medium'
-                });
-            }
-        }
-        setShowNoLoginEditor(true);
-        return false;
-    }
-
-    if (showDiagramSelector) {
-        return html`
-            <${DiagramSelector} 
-                onSelectDiagram=${onSelectDiagram}
-                onCancel=${onCloseDiagramSelector}
-            />
-        `;
-    }
-
-    if (showNoLoginEditor) {
-        return html`
-             <${SvelteEditorWrapper} 
-                component="NoLoginEditor"
-                onCancel=${onCancel} 
-                existingDiagramData=${existingDiagramData}
-                isEditMode=${isEditingMermaidDiagram} 
-            />
-        `;
-    }
+        setAccessToken(undefined);
+        setUser(null);
+    };
 
     if (!accessToken) {
         return html`
-            <${Login} 
-                onLogin=${onLogin} 
-                onCancel=${onCancel} 
-                onNoLoginClick=${onNoLoginClick} 
-                onOpenDiagramSelector=${onOpenDiagramSelector}
+            <${Login}
+                onLogin=${onLogin}
+                onCancel=${onCancel}
             />
         `;
     }
 
     return html`
-        <${Form} 
-            user=${user} 
+        <${Form}
+            user=${user}
             onLogout=${onLogout}
             mcAccessToken=${accessToken}
         />

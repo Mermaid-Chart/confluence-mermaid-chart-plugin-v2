@@ -309,17 +309,18 @@ iframe {
 .confluence-mermaid-chart-container {
   display: flex;
   flex-direction: column;
-  width: 100vw;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
   overflow-y: auto;
   background-color: #FFFFFF;
 }
 
 .chart-selection-container {
   max-width: 1000px;
-  margin: 0 auto;
   width: 100%;
-  margin-top: 156px;
+  margin: auto;
+  padding: 24px 16px;
 }
 
 .confluence-mermaid-chart-container h2 {
@@ -346,6 +347,20 @@ iframe {
   gap: 24px;
   justify-content: center;
   width: 100%;
+}
+
+.chart-options-single {
+  max-width: 420px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.chart-options-single .chart-option-column {
+  flex: none;
+  width: 100%;
+  align-items: center;
+  text-align: center;
 }
 
 .chart-option-column {
@@ -399,6 +414,14 @@ iframe {
 .primary-button:hover {
   background-color: #d81b60;
   transform: translateY(-1px);
+}
+
+#login-button {
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  justify-content: center;
 }
 
 .secondary-button {

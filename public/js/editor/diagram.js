@@ -1,7 +1,10 @@
 import { h } from 'https://esm.sh/preact';
 import htm from 'https://esm.sh/htm';
 import { useEffect, useRef } from 'https://esm.sh/preact/hooks';
-import { getImageDataURI, getSvgMarkupForPreview } from '/js/imageUtils.js';
+import DOMPurify from '/vendor/dompurify/purify.es.mjs';
+import { getImageDataURI, getSvgMarkupForPreview, installSvgSanitizer, sanitizeSvgRoot } from '/js/imageUtils.js?v=svg-sanitize-3';
+
+installSvgSanitizer(DOMPurify);
 
 const html = htm.bind(h);
 
@@ -11,7 +14,23 @@ function SvgInlinePreview({ svgMarkup }) {
     if (!ref.current) {
       return;
     }
-    ref.current.innerHTML = svgMarkup || '';
+    ref.current.replaceChildren();
+    if (!svgMarkup) {
+      return;
+    }
+    const doc = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml');
+    if (doc.querySelector('parsererror')) {
+      return;
+    }
+    const root = doc.documentElement;
+    if (!root || String(root.localName).toLowerCase() !== 'svg') {
+      return;
+    }
+    const safeRoot = sanitizeSvgRoot(root);
+    if (!safeRoot) {
+      return;
+    }
+    ref.current.appendChild(document.importNode(safeRoot, true));
   }, [svgMarkup]);
   return html`<div class="image svg-inline" ref=${ref} />`;
 }
