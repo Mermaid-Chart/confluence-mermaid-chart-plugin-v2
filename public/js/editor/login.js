@@ -64,15 +64,15 @@ export function Login({onLogin, onCancel}) {
       
       <div class="confluence-mermaid-chart-container">
         <div class="chart-selection-container">
-          <h2>Connect Mermaid Charts with Confluence</h2>
-          <p class="description">Sign in to Mermaid Chart to create, edit, and sync diagrams in Confluence. Existing diagrams on this page keep working — connect to continue editing them.</p>
+          <h2>Sign in to edit Mermaid diagrams in Confluence</h2>
+          <p class="description">The Mermaid plugin now requires a Mermaid Chart account to create or edit diagrams. Existing local diagrams remain unchanged and continue to display on the page.</p>
           
           <div class="chart-options chart-options-single">
             <div class="chart-option-column">
               <h3>Continue with Mermaid Chart</h3>
-              <p>Access your recent and shared diagrams, keep version history, and sync changes across your team. Free accounts can save up to 3 diagrams.</p>
+              <p>Sign in to access your diagrams, version history, and team collaboration. Local diagrams stay unchanged until you sign in and import them. Free accounts can save up to 3 diagrams.</p>
               <button id="login-button" class="primary-button" onClick=${onLoginClick}>
-                Connect to Mermaid Chart
+                Sign in to Mermaid Chart
               </button>
             </div>
           </div>
