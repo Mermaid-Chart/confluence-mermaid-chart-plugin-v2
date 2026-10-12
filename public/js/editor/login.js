@@ -5,7 +5,7 @@ import analytics from '../lib/analytics.js';
 const html = htm.bind(h);
 let timeout;
 
-export function Login({onLogin, onCancel, onNoLoginClick, onOpenDiagramSelector}) {
+export function Login({onLogin, onCancel}) {
   
   const onLoginClick = () => {
     analytics.trackConnectToMermaidChart();
@@ -65,23 +65,14 @@ export function Login({onLogin, onCancel, onNoLoginClick, onOpenDiagramSelector}
       <div class="confluence-mermaid-chart-container">
         <div class="chart-selection-container">
           <h2>Connect Mermaid Charts with Confluence</h2>
-          <p class="description">Bring your diagrams to life inside Confluence. Connect your Mermaid account to create, edit, and sync diagrams seamlessly with your team.</p>
+          <p class="description">Sign in to Mermaid Chart to create, edit, and sync diagrams in Confluence. Existing diagrams on this page keep working — connect to continue editing them.</p>
           
-          <div class="chart-options">
+          <div class="chart-options chart-options-single">
             <div class="chart-option-column">
               <h3>Continue with Mermaid Chart</h3>
-              <p>Access your recent and shared diagrams, keep version history, and sync changes across your team.</p>
+              <p>Access your recent and shared diagrams, keep version history, and sync changes across your team. Free accounts can save up to 3 diagrams.</p>
               <button id="login-button" class="primary-button" onClick=${onLoginClick}>
                 Connect to Mermaid Chart
-              </button>
-            </div>
-            
-            <div class="chart-option-column">
-              <h3>Quick start without login</h3>
-              <p>Start a quick diagram inside Confluence — no account required. Templates and diagram types are available once you open the editor.</p>
-              
-              <button id="open-editor-button" class="secondary-button" onClick=${onOpenDiagramSelector}>
-                Open Editor
               </button>
             </div>
           </div>

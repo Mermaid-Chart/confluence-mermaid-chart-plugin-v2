@@ -5,7 +5,7 @@ app:
     remote: connect
     authentication: jwt
   runtime:
-    name: nodejs20.x
+    name: nodejs24.x
 remotes:
   - key: connect
     baseUrl: https://confluence.mermaidchart.com

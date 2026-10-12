@@ -120,7 +120,8 @@ app.use(compression());
 // Include atlassian-connect-express middleware
 app.use(addon.middleware());
 
-// Mount the static files directory
+// Mount the static files directory. DOMPurify lives in public/vendor so the
+// viewer can load it without resolving node_modules at startup.
 const staticDir = path.join(process.cwd(), "public");
 app.use(express.static(staticDir));
 

@@ -3,7 +3,12 @@ import { useEffect, useRef, useState } from "https://esm.sh/preact/hooks";
 import htm from "https://esm.sh/htm";
 import { Diagram } from "./diagram.js";
 import { Header } from "./header.js";
-import { compressForConfluence, sizeConfig, calculateDataSize, extractBase64ForMacroBody } from "/js/imageUtils.js";
+import {
+  compressForConfluence,
+  sizeConfig,
+  calculateDataSize,
+  extractBase64ForMacroBody,
+} from "/js/imageUtils.js?v=svg-sanitize-3";
 
 const html = htm.bind(h);
 
@@ -71,7 +76,9 @@ export function Form({ mcAccessToken, user, onLogout }) {
               !looksLikeMermaidSource(saveData.diagramCode)
             ? saveData.diagramCode
             : rawImage;
-      const diagramImage =
+      // extractBase64ForMacroBody bakes viewBox pixel width/height into SVG so
+      // width/height="100%" does not render as a blank box in Confluence iframes.
+      let diagramImage =
         imageCandidate != null && imageCandidate !== ""
           ? extractBase64ForMacroBody(imageCandidate) || imageCandidate
           : imageCandidate;
@@ -81,14 +88,16 @@ export function Form({ mcAccessToken, user, onLogout }) {
         (looksLikeMermaidSource(saveData.diagramCode) ? saveData.diagramCode : "") ||
         "";
 
-      // Image only in macro body — do not also store it in diagramCode (avoids 2x payload).
-      // Omit diagramCode so re-save drops legacy image-in-param from older macros.
+      // Keep image in BOTH macro body and diagramCode. After refresh, getMacroBody is often
+      // empty in the viewer iframe while getMacroData still has diagramCode — that was the
+      // pre-d5330e5 path that made diagrams persist. mcSourceCode holds Mermaid text.
       const macroParams = {
         documentID: saveData.documentID,
         projectID: saveData.projectID,
         major: saveData.major,
         minor: saveData.minor,
         caption: saveData.caption,
+        diagramCode: diagramImage,
         mcSourceCode: mermaidSource,
         mcDiagramType: saveData.mcDiagramType || "unknown",
         size: saveData.size,
@@ -109,6 +118,8 @@ export function Form({ mcAccessToken, user, onLogout }) {
 
         if (totalSize > sizeConfig.maxRequestSize) {
           bodyDataToSave = await compressForConfluence(diagramImage);
+          // Keep param fallback in sync with body (same image, compressed).
+          macroParams.diagramCode = bodyDataToSave;
           const finalBodySize = calculateDataSize(bodyDataToSave);
           const finalParamsSize = calculateDataSize(macroParams);
           const finalTotalSize = finalBodySize + finalParamsSize;

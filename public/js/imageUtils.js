@@ -10,9 +10,279 @@ function utf8ToBase64(str) {
   return btoa(unescape(encodeURIComponent(str)));
 }
 
+function utf8FromBase64(b64) {
+  return decodeURIComponent(escape(atob(b64)));
+}
+
+/** Preview decode. Saved SVG is UTF-8; bare atob turns "Über" into "Ãœber". */
+function decodeSvgBase64(b64) {
+  try {
+    return utf8FromBase64(b64);
+  } catch {
+    try {
+      return atob(b64);
+    } catch {
+      return null;
+    }
+  }
+}
+
+/**
+ * DOMPurify drops HTML inside <foreignObject> unless that tag is an HTML
+ * integration point. Labels and FA icons live there, so it has to stay.
+ * Forms and buttons are not part of a diagram; they were the remaining click-to-script path.
+ */
+const SVG_PURIFY_CONFIG = {
+  USE_PROFILES: { svg: true, svgFilters: true, html: true },
+  ADD_TAGS: ['foreignObject'],
+  HTML_INTEGRATION_POINTS: { foreignobject: true },
+  FORBID_TAGS: ['form', 'button', 'input', 'textarea', 'select', 'option'],
+};
+
+/** @type {{ sanitize: Function } | null} */
+let svgPurify = null;
+
+/** Call once from the browser before any SVG is inserted into the page. */
+export function installSvgSanitizer(purify) {
+  svgPurify = purify || null;
+}
+
+/**
+ * Mermaid and older saves sometimes use HTML inside the SVG (`<br>`, `&nbsp;`).
+ * Those are not XML, so image/svg+xml rejects the whole diagram.
+ */
+function repairHtmlInSvg(markup) {
+  return markup
+    .replace(/&nbsp;/gi, '&#160;')
+    .replace(/<br\b([^>]*?)\/?>/gi, (_, attrs) => `<br${attrs}/>`);
+}
+
+/** Nested label-icon SVGs often omit xmlns. XML then treats them as HTML, and DOMPurify drops them. */
+function withNestedSvgNamespace(svgMarkup) {
+  let first = true;
+  return svgMarkup.replace(/<svg\b[^>]*>/gi, (tag) => {
+    if (first) {
+      first = false;
+      return tag;
+    }
+    if (/\bxmlns\s*=/i.test(tag)) {
+      return tag;
+    }
+    return tag.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+  });
+}
+
+/**
+ * @param {string} svgMarkup
+ * @returns {string|null}
+ */
+export function sanitizeSvgMarkup(svgMarkup) {
+  if (!svgMarkup || typeof svgMarkup !== 'string') {
+    return svgMarkup;
+  }
+  if (typeof DOMParser === 'undefined' || typeof XMLSerializer === 'undefined') {
+    return null;
+  }
+  try {
+    // Sanitize the SVG node, then serialize as XML. DOMPurify's string result
+    // is HTML (<br>, &nbsp;), and the viewer parses that as image/svg+xml.
+    const doc = new DOMParser().parseFromString(
+      withNestedSvgNamespace(repairHtmlInSvg(svgMarkup)),
+      'image/svg+xml',
+    );
+    if (doc.querySelector('parsererror')) {
+      return null;
+    }
+    const clean = sanitizeSvgRoot(doc.documentElement);
+    return clean ? new XMLSerializer().serializeToString(clean) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Last step before an SVG node joins the page.
+ * @param {Element} root
+ * @returns {Element|null}
+ */
+export function sanitizeSvgRoot(root) {
+  if (!root || !svgPurify || typeof svgPurify.sanitize !== 'function') {
+    return null;
+  }
+  try {
+    const clean = svgPurify.sanitize(root, { ...SVG_PURIFY_CONFIG, IN_PLACE: true });
+    if (!clean || String(clean.localName || '').toLowerCase() !== 'svg') {
+      return null;
+    }
+    return clean;
+  } catch {
+    return null;
+  }
+}
+
+/** Decode SVG base64, bake pixel dimensions, re-encode. Falls back to raw on failure. */
+function normalizeSvgBase64(rawBase64) {
+  const raw = rawBase64.replace(/\s/g, '');
+  try {
+    return utf8ToBase64(ensureSvgPixelDimensions(utf8FromBase64(raw)));
+  } catch {
+    return raw;
+  }
+}
+
+/** Pixel size for Mermaid `.label-icon` nested SVGs (`1em` is unreliable in Confluence iframes). */
+const LABEL_ICON_PX = 14;
+
+/**
+ * Replace width/height="…em" on nested <svg> (not the root) with fixed px.
+ * FA icons like fa:fa-car embed as nested label-icon SVGs with 1em size.
+ * @param {string} svgMarkup
+ * @returns {string}
+ */
+function normalizeNestedSvgEmUnits(svgMarkup) {
+  let first = true;
+  return svgMarkup.replace(/<svg\b[^>]*>/gi, (tag) => {
+    if (first) {
+      first = false;
+      return tag;
+    }
+    return tag
+      .replace(/\bwidth\s*=\s*["'][^"']*em["']/i, `width="${LABEL_ICON_PX}"`)
+      .replace(/\bheight\s*=\s*["'][^"']*em["']/i, `height="${LABEL_ICON_PX}"`);
+  });
+}
+
+/**
+ * Mermaid embeds `#export-svg .label-icon{height:1em}` which overrides SVG attributes.
+ * Bake to px so icons keep a stable size outside the editor stylesheet.
+ * @param {string} svgMarkup
+ * @returns {string}
+ */
+function normalizeLabelIconCss(svgMarkup) {
+  return svgMarkup.replace(/\.label-icon\s*\{[^}]*\}/gi, (block) =>
+    block.replace(/(height|width)\s*:\s*[^;}\s]+em\b/gi, `$1:${LABEL_ICON_PX}px`),
+  );
+}
+
+/** Inner markup of the div that starts at `contentStart`, honoring nested divs. */
+function divInnerContent(markup, contentStart) {
+  let depth = 1;
+  let index = contentStart;
+  const lower = markup.toLowerCase();
+  while (index < markup.length && depth > 0) {
+    const nextOpen = lower.indexOf('<div', index);
+    const nextClose = lower.indexOf('</div', index);
+    if (nextClose === -1) {
+      return markup.slice(contentStart);
+    }
+    if (nextOpen !== -1 && nextOpen < nextClose) {
+      depth += 1;
+      index = nextOpen + 4;
+      continue;
+    }
+    depth -= 1;
+    if (depth === 0) {
+      return markup.slice(contentStart, nextClose);
+    }
+    index = nextClose + 6;
+  }
+  return markup.slice(contentStart);
+}
+
+/**
+ * FA icons use height:1em. Only the label that contains a .label-icon gets a
+ * fixed font-size, so other labels keep the diagram stylesheet / theme size.
+ * @param {string} svgMarkup
+ * @returns {string}
+ */
+function ensureForeignObjectLabelFontSize(svgMarkup) {
+  // Repair already-saved markup from a missing semicolon: "14pxdisplay" → "14px;display"
+  const repaired = svgMarkup.replace(/font-size:\s*(\d+)px(?=[a-zA-Z])/gi, 'font-size: $1px;');
+  return repaired.replace(
+    /(<div\b[^>]*\bxmlns=["']http:\/\/www\.w3\.org\/1999\/xhtml["'][^>]*\bstyle=["'])([^"']*)(["'])/gi,
+    (full, open, style, close, offset, whole) => {
+      const content = divInnerContent(whole, offset + full.length);
+      const hasIcon = /label-icon/i.test(content);
+      if (/\bfont-size\s*:/i.test(style)) {
+        if (!hasIcon && /^font-size:\s*14px;?\s*/i.test(style)) {
+          return `${open}${style.replace(/^font-size:\s*14px;?\s*/i, '')}${close}`;
+        }
+        return full;
+      }
+      if (!hasIcon) {
+        return full;
+      }
+      const prefix = style.trim() ? `font-size: ${LABEL_ICON_PX}px;` : `font-size: ${LABEL_ICON_PX}px`;
+      return `${open}${prefix}${style}${close}`;
+    },
+  );
+}
+
+/**
+ * Mermaid SVGs often use width/height="100%". As an <img> data-URI those have no
+ * intrinsic size and render blank on the Confluence page. Replace % sizes with
+ * viewBox pixel dimensions when possible. Also bake FA label-icon em units to px.
+ * @param {string} svgMarkup
+ * @returns {string}
+ */
+export function ensureSvgPixelDimensions(svgMarkup) {
+  if (!svgMarkup || typeof svgMarkup !== 'string') {
+    return svgMarkup;
+  }
+  if (!/<svg[\s>/]/i.test(svgMarkup)) {
+    return svgMarkup;
+  }
+
+  const rootOpenMatch = svgMarkup.match(/<svg\b[^>]*>/i);
+  const rootTag = rootOpenMatch ? rootOpenMatch[0] : '';
+  const viewBoxMatch = rootTag.match(/\bviewBox\s*=\s*["']([^"']+)["']/i)
+    || svgMarkup.match(/\bviewBox\s*=\s*["']([^"']+)["']/i);
+  if (!viewBoxMatch) {
+    return normalizeLabelIconCss(
+      ensureForeignObjectLabelFontSize(normalizeNestedSvgEmUnits(svgMarkup)),
+    );
+  }
+  const parts = viewBoxMatch[1].trim().split(/[\s,]+/).map(Number);
+  if (parts.length < 4 || !(parts[2] > 0) || !(parts[3] > 0)) {
+    return normalizeLabelIconCss(
+      ensureForeignObjectLabelFontSize(normalizeNestedSvgEmUnits(svgMarkup)),
+    );
+  }
+  const pixelWidth = String(parts[2]);
+  const pixelHeight = String(parts[3]);
+
+  // Inspect only the root <svg> tag — foreignObject / nested icons also have width/height.
+  const widthIsPercent = /\bwidth\s*=\s*["'][^"']*%["']/i.test(rootTag);
+  const heightIsPercent = /\bheight\s*=\s*["'][^"']*%["']/i.test(rootTag);
+  const missingWidth = !/\bwidth\s*=\s*["']/i.test(rootTag);
+  const missingHeight = !/\bheight\s*=\s*["']/i.test(rootTag);
+
+  let out = svgMarkup;
+  if (widthIsPercent) {
+    out = out.replace(/<svg\b[^>]*>/i, (tag) =>
+      tag.replace(/\bwidth\s*=\s*["'][^"']*%["']/i, `width="${pixelWidth}"`),
+    );
+  } else if (missingWidth) {
+    out = out.replace(/<svg\b/i, `<svg width="${pixelWidth}"`);
+  }
+  if (heightIsPercent) {
+    out = out.replace(/<svg\b[^>]*>/i, (tag) =>
+      tag.replace(/\bheight\s*=\s*["'][^"']*%["']/i, `height="${pixelHeight}"`),
+    );
+  } else if (missingHeight) {
+    out = out.replace(/<svg\b/i, `<svg height="${pixelHeight}"`);
+  }
+
+  out = normalizeNestedSvgEmUnits(out);
+  out = ensureForeignObjectLabelFontSize(out);
+  out = normalizeLabelIconCss(out);
+  return out;
+}
+
 /**
  * Strips a data: URL wrapper so detection/compression work on raw base64 or text.
  * Used when saving the macro body (Confluence expects raw base64, not a data URL).
+ * Also normalizes SVG % dimensions so page <img> rendering is not blank.
  * @param {string} diagramImage
  * @returns {string}
  */
@@ -32,18 +302,26 @@ export function extractBase64ForMacroBody(diagramImage) {
     const header = s.slice(0, comma).toLowerCase();
     const body = s.slice(comma + 1);
     if (header.includes('base64')) {
-      return body.replace(/\s/g, '');
+      const raw = body.replace(/\s/g, '');
+      return header.includes('svg') ? normalizeSvgBase64(raw) : raw;
     }
     try {
       const decoded = decodeURIComponent(body);
-      return utf8ToBase64(decoded);
+      const normalized = header.includes('svg')
+        ? ensureSvgPixelDimensions(decoded)
+        : decoded;
+      return utf8ToBase64(normalized);
     } catch {
       return utf8ToBase64(body);
     }
   }
   const t = s.trimStart();
   if (t.startsWith('<') || t.startsWith('<?xml')) {
-    return utf8ToBase64(t);
+    return utf8ToBase64(ensureSvgPixelDimensions(t));
+  }
+  // Raw base64 — if SVG, bake pixel dimensions
+  if (detectImageFormat(s) === 'svg') {
+    return normalizeSvgBase64(s);
   }
   return s.replace(/\s/g, '');
 }
@@ -138,7 +416,7 @@ export function getSvgMarkupForPreview(input) {
   }
   const s = input.trim();
   if (s.startsWith('<') && /<svg[\s>/]/i.test(s)) {
-    return s;
+    return sanitizeSvgMarkup(s);
   }
   if (s.startsWith('data:')) {
     const comma = s.indexOf(',');
@@ -151,14 +429,11 @@ export function getSvgMarkupForPreview(input) {
       return null;
     }
     if (header.includes('base64')) {
-      try {
-        return atob(body);
-      } catch {
-        return null;
-      }
+      const decoded = decodeSvgBase64(body);
+      return decoded ? sanitizeSvgMarkup(decoded) : null;
     }
     try {
-      return decodeURIComponent(body);
+      return sanitizeSvgMarkup(decodeURIComponent(body));
     } catch {
       return null;
     }
@@ -166,11 +441,76 @@ export function getSvgMarkupForPreview(input) {
   if (detectImageFormat(s) !== 'svg') {
     return null;
   }
-  try {
-    return atob(s);
-  } catch {
-    return null;
-  }
+  const decoded = decodeSvgBase64(s);
+  return decoded ? sanitizeSvgMarkup(decoded) : null;
+}
+
+/**
+ * Rasterize SVG (base64 / data URI / markup) to PNG base64 for reliable Confluence <img> display.
+ * Bakes viewBox pixel sizes first so width/height 100% SVGs are not drawn at 0×0.
+ * @param {string} svgInput
+ * @returns {Promise<string|null>} PNG base64 without data: prefix, or null on failure
+ */
+export function rasterizeSvgToPngBase64(svgInput) {
+  return new Promise((resolve) => {
+    try {
+      let markup = getSvgMarkupForPreview(svgInput);
+      if (!markup) {
+        resolve(null);
+        return;
+      }
+      markup = ensureSvgPixelDimensions(markup);
+      const vbMatch = markup.match(/\bviewBox\s*=\s*["']([^"']+)["']/i);
+      let width = 800;
+      let height = 600;
+      if (vbMatch) {
+        const parts = vbMatch[1].trim().split(/[\s,]+/).map(Number);
+        if (parts.length >= 4 && parts[2] > 0 && parts[3] > 0) {
+          width = Math.ceil(parts[2]);
+          height = Math.ceil(parts[3]);
+        }
+      }
+      const wMatch = markup.match(/\bwidth\s*=\s*["']([0-9.]+)/i);
+      const hMatch = markup.match(/\bheight\s*=\s*["']([0-9.]+)/i);
+      if (wMatch) width = Math.ceil(Number(wMatch[1])) || width;
+      if (hMatch) height = Math.ceil(Number(hMatch[1])) || height;
+
+      const blob = new Blob([markup], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      const timeout = setTimeout(() => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      }, 15000);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/png');
+          URL.revokeObjectURL(url);
+          resolve(dataUrl.split(',')[1] || null);
+        } catch {
+          URL.revokeObjectURL(url);
+          resolve(null);
+        }
+      };
+      img.onerror = () => {
+        clearTimeout(timeout);
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    } catch {
+      resolve(null);
+    }
+  });
 }
 
 /**
