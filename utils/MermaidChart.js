@@ -1,16 +1,13 @@
-import {v4 as uuid} from 'uuid';
-import fetch from 'node-fetch';
-import {getEncodedSHA256Hash} from './index.js';
+import { createHash, randomUUID } from 'node:crypto';
 
 const defaultBaseURL = 'https://test.mermaidchart.com';
 
 const CLIENT_KEY = 'all';
 
 class MermaidChart {
-    addon;
+    store;
     clientID;
     baseURL;
-    axios;
     redirectURI;
     URLS = {
         oauth: {
@@ -24,45 +21,11 @@ class MermaidChart {
             users: {
                 self: `/rest-api/users/me`,
             },
-            documents: {
-                get: (documentID) => {
-                    return `/rest-api/documents/${documentID}`;
-                },
-            },
-            projects: {
-                list: `/rest-api/projects`,
-                get: (projectID) => {
-                    return {
-                        documents: `/rest-api/projects/${projectID}/documents`,
-                    };
-                },
-            },
-        },
-        raw: (
-            document,
-            theme = 'light',
-        ) => {
-            const base = `/raw/${document.documentID}?version=v${document.major}.${document.minor}&theme=${theme}&format=`;
-            return {
-                html: base + 'html',
-                svg: base + 'svg',
-                png: base + 'png',
-            };
-        },
-        diagram: (
-            d,
-        ) => {
-            const base = `/app/projects/${d.projectID}/diagrams/${d.documentID}/version/v${d.major}.${d.minor}`;
-            return {
-                self: base,
-                edit: base + '/edit',
-                view: base + '/view',
-            };
         },
     };
 
-    constructor({clientID, baseURL, redirectURI, addon}) {
-        this.addon = addon;
+    constructor({clientID, baseURL, redirectURI, store}) {
+        this.store = store;
         this.clientID = clientID;
         this.setBaseURL(baseURL || defaultBaseURL);
         if (redirectURI) {
@@ -90,8 +53,8 @@ class MermaidChart {
             throw new Error('redirectURI is not set');
         }
 
-        const stateID = state ?? uuid();
-        const codeVerifier= uuid();
+        const stateID = state ?? randomUUID();
+        const codeVerifier = randomUUID();
 
         await this.setCodeVerifier(stateID, codeVerifier);
 
@@ -100,13 +63,11 @@ class MermaidChart {
             redirect_uri: this.redirectURI,
             response_type: 'code',
             code_challenge_method: 'S256',
-            code_challenge: await getEncodedSHA256Hash(
-                codeVerifier,
-            ),
+            code_challenge: createHash('sha256').update(codeVerifier).digest('base64url'),
             state: stateID,
             scope: scope ?? 'email',
             utm_source: trackingParams?.utm_source || 'mermaid_chart_confluence_plugin',
-            utm_medium: trackingParams?.utm_medium || 'confluence', 
+            utm_medium: trackingParams?.utm_medium || 'confluence',
             utm_campaign: trackingParams?.utm_campaign || 'confluence_plugin'
         };
 
@@ -134,7 +95,6 @@ class MermaidChart {
         }
 
         const codeVerifier = await this.getCodeVerifier(state);
-        // Check if it is a valid auth request started by the extension
         if (!codeVerifier) {
             throw new OAuthError('invalid_state');
         }
@@ -159,7 +119,7 @@ class MermaidChart {
                 `invalid_token ${tokenResponse.status} ${tokenResponse.statusText}`);
         }
 
-        await this.setToken(state, (await tokenResponse.json()).access_token)
+        await this.setToken(state, (await tokenResponse.json()).access_token);
         setTimeout(async () => {
             await this.delToken(state);
         }, 30 * 60 * 1000);
@@ -173,64 +133,33 @@ class MermaidChart {
                 },
             });
         if (!response.ok) {
-            throw new OAuthError("Invalid token to get user info");
+            throw new OAuthError('Invalid token to get user info');
         }
         return (await response.json());
     }
 
-    getEditURL(
-        document,
-    ) {
-        const url = `${this.baseURL}${this.URLS.diagram(document).edit}`;
-        return url;
-    }
-
-    async getDocumentAsSvg(
-        document,
-        theme = 'light',
-    ) {
-        const svg = await fetch(
-            this.URLS.raw(document, theme).svg
-        );
-        return await svg.text();
-    }
-
-    async getRawDocument(
-        document,
-        theme = 'light',
-    ) {
-        const raw = await fetch(
-            this.URLS.raw(document, theme).svg
-        );
-        return await raw.text();
-    }
-
     async getCodeVerifier(state) {
-        return await this.addon.settings.get(`state:${state}:code`, CLIENT_KEY);
+        return await this.store.get(`state:${state}:code`, CLIENT_KEY);
     }
 
     async setCodeVerifier(state, code) {
-        return await this.addon.settings.set(`state:${state}:code`, code,
-            CLIENT_KEY);
+        return await this.store.set(`state:${state}:code`, code, CLIENT_KEY);
     }
 
     async delCodeVerifier(state) {
-        return await this.addon.settings.del(`state:${state}:code`, CLIENT_KEY);
+        return await this.store.del(`state:${state}:code`, CLIENT_KEY);
     }
 
     async getToken(state) {
-        return await this.addon.settings.get(`state:${state}:token`,
-            CLIENT_KEY);
+        return await this.store.get(`state:${state}:token`, CLIENT_KEY);
     }
 
     async setToken(state, code) {
-        return await this.addon.settings.set(`state:${state}:token`, code,
-            CLIENT_KEY);
+        return await this.store.set(`state:${state}:token`, code, CLIENT_KEY);
     }
 
     async delToken(state) {
-        return await this.addon.settings.del(`state:${state}:token`,
-            CLIENT_KEY);
+        return await this.store.del(`state:${state}:token`, CLIENT_KEY);
     }
 }
 

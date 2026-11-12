@@ -1,0 +1,20 @@
+#content {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    min-height: 1px;
+}
+#content #image {
+    width: 100%;
+    line-height: 0;
+    min-height: 1px;
+}
+/* Root diagram only. A blanket `svg` rule also stretches nested
+   .label-icon SVGs (fa:fa-car) to the full label width. */
+#content #image > img,
+#content #image > .svg-inline > svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 100%;
+}

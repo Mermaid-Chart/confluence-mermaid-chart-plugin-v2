@@ -1,73 +1,62 @@
-import svelte from 'rollup-plugin-svelte';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import postcss from 'rollup-plugin-postcss';
-import postcssUrl from 'postcss-url';
-import json from '@rollup/plugin-json';
 import copy from 'rollup-plugin-copy';
-import Icons from 'unplugin-icons/rollup';
 
 const production = process.env.NODE_ENV === 'production' || !process.env.ROLLUP_WATCH;
 
-export default {
-  input: 'src/svelte/main.js',
+const forgeViewer = {
+  input: 'src/forge/viewer/main.js',
   output: {
-    sourcemap: !production,
     format: 'es',
-    name: 'SvelteEditorComponents',
-    dir: 'dist/svelte',
-    entryFileNames: 'editor-components.js',
-    chunkFileNames: '[name]-[hash].js'
+    file: 'static/viewer/viewer.js',
+    inlineDynamicImports: true
   },
   plugins: [
-    json(),
-    Icons({
-      compiler: 'svelte',
-    }),
     copy({
       targets: [
-        {
-          src: 'node_modules/@fontsource/recursive/files/*',
-          dest: 'dist/svelte/files'
-        },
-        {
-          src: 'node_modules/@fortawesome/fontawesome-free/webfonts/*',
-          dest: 'dist/svelte/webfonts'
-        }
+        { src: 'src/forge/viewer/index.html', dest: 'static/viewer' },
+        { src: 'public/icon_80x80.png', dest: 'static/viewer' }
       ]
     }),
     postcss({
-      extract: 'editor-styles.css',
+      extract: 'viewer.css',
       minimize: production,
-      plugins: [
-        postcssUrl({
-          url: (asset) => {
-            // Rewrite Font Awesome font paths
-            if (asset.url.includes('../webfonts/')) {
-              return asset.url.replace('../webfonts/', './webfonts/');
-            }
-            return asset.url;
-          }
-        })
+      config: false
+    }),
+    resolve({ browser: true }),
+    commonjs(),
+    production && terser()
+  ]
+};
+
+const forgeEditor = {
+  input: 'src/forge/editor/main.js',
+  output: {
+    format: 'es',
+    file: 'static/editor/editor.js',
+    inlineDynamicImports: true
+  },
+  plugins: [
+    copy({
+      targets: [
+        { src: 'src/forge/editor/index.html', dest: 'static/editor' },
+        { src: 'public/spinner.svg', dest: 'static/editor' }
       ]
     }),
-    svelte({
-      compilerOptions: {
-        dev: !production
-      },
-      emitCss: false 
+    postcss({
+      extract: 'editor.css',
+      minimize: production,
+      config: false
     }),
     resolve({
       browser: true,
-      dedupe: ['svelte'],
-      preferBuiltins: false
+      dedupe: ['preact']
     }),
     commonjs(),
-    
     production && terser()
-  ],
-  watch: {
-    clearScreen: false
-  }
+  ]
 };
+
+export default [forgeViewer, forgeEditor];
