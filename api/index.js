@@ -1,154 +1,91 @@
-// Entry point for the app
-// Express is the underlying that atlassian-connect-express uses:
-// https://expressjs.com
-import express from "express";
+import express from 'express';
+import compression from 'compression';
+import errorHandler from 'errorhandler';
+import morgan from 'morgan';
+import path from 'path';
+import helmet from 'helmet';
+import nocache from 'nocache';
 
-// https://expressjs.com/en/guide/using-middleware.html
-import bodyParser from "body-parser";
-import compression from "compression";
-import cookieParser from "cookie-parser";
-import errorHandler from "errorhandler";
-import morgan from "morgan";
+import { MermaidChart } from '../utils/MermaidChart.js';
+import { createRedisStore } from '../utils/redisStore.js';
+import forgeRoutes from '../routes/forge.js';
 
-// atlassian-connect-express also provides a middleware
-import ace from "atlassian-connect-express";
+const MC_BASE_URL = process.env.MC_BASE_URL || 'https://test.mermaidchart.com';
+const LOCAL_BASE_URL =
+  process.env.LOCAL_BASE_URL || 'https://confluence.mermaidchart.com';
+const PORT = process.env.PORT || 3000;
 
-// Use Handlebars as view engine:
-// https://npmjs.org/package/express-hbs
-// http://handlebarsjs.com
-import hbs from "express-hbs";
-
-// We also need a few stock Node modules
-import path from "path";
-import os from "os";
-import helmet from "helmet";
-import nocache from "nocache";
-import { fileURLToPath } from "url";
-import { dirname, resolve } from "path";
-import { createRequire } from "node:module";
-
-// Routes live here; this is the C in MVC
-import routes from "../routes/index.js";
-import { readFileSync } from "fs";
-
-// Use Vercel Serverless Redis connection
-import { ServerlessRedisAdapter } from "../serverless-redis.js";
-
-ace.store.register("@upstash/redis", function (logger, opts) {
-  if (arguments.length === 0) {
-    return ServerlessRedisAdapter;
-  }
-  return new ServerlessRedisAdapter(logger, opts);
-});
-
-console.log("CWD is ", process.cwd());
-console.log("config.json is at ", resolve("config.json"));
-console.log(
-  "config.json is at ",
-  createRequire(import.meta.url).resolve("../config.json")
-);
-console.log(
-  "config.json contents are ",
-  readFileSync("config.json", { encoding: "utf8" })
-);
-
-console.log("atlassian-connect.json is at ", resolve("atlassian-connect.json"));
-console.log(
-  "atlassian-connect.json is at ",
-  createRequire(import.meta.url).resolve("../atlassian-connect.json")
-);
-console.log(
-  "atlassian-connect.json contents are ",
-  readFileSync("atlassian-connect.json", { encoding: "utf8" })
-);
-
-// Bootstrap Express and atlassian-connect-express
 const app = express();
-export const addon = ace(app, {
-  config: {
-    descriptorTransformer(self, config) {
-      console.log("Transformed descriptor is ", self);
-      return self;
-    },
-  },
-});
+app.set('port', PORT);
 
-// See config.json
-const port = addon.config.port();
-app.set("port", port);
+export const devEnv = app.get('env') === 'development';
+app.use(morgan(devEnv ? 'dev' : 'combined'));
 
-console.log("localBaseUrl is ", addon.config.localBaseUrl());
-
-// Log requests, using an appropriate formatter by env
-export const devEnv = app.get("env") === "development";
-app.use(morgan(devEnv ? "dev" : "combined"));
-
-// We don't want to log JWT tokens, for security reasons
-morgan.token("url", redactJwtTokens);
-
-// Configure Handlebars
-// Testing of what runs in vercel
-const viewsDir = path.join(process.cwd(), "views");
-const handlebarsEngine = hbs.express4({ partialsDir: viewsDir });
-app.engine("hbs", handlebarsEngine);
-app.set("view engine", "hbs");
-app.set("views", viewsDir);
-
-// Atlassian security policy requirements
-// http://go.atlassian.com/security-requirements-for-cloud-apps
-// HSTS must be enabled with a minimum age of at least one year
 app.use(
   helmet.hsts({
     maxAge: 31536000,
     includeSubDomains: false,
-  })
+  }),
 );
 app.use(
   helmet.referrerPolicy({
-    policy: ["origin"],
-  })
+    policy: ['origin'],
+  }),
 );
 
-// Include request parsers
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
-
-// Gzip responses when appropriate
+app.use(express.json({ limit: '5mb' }));
 app.use(compression());
-
-// Include atlassian-connect-express middleware
-app.use(addon.middleware());
-
-// Mount the static files directory. DOMPurify lives in public/vendor so the
-// viewer can load it without resolving node_modules at startup.
-const staticDir = path.join(process.cwd(), "public");
-app.use(express.static(staticDir));
-
-// Mount the dist directory for Svelte build output
-const distDir = path.join(process.cwd(), "dist");
-app.use('/dist', express.static(distDir));
-
-// Atlassian security policy requirements
-// http://go.atlassian.com/security-requirements-for-cloud-apps
 app.use(nocache());
 
-// Show nicer errors in dev mode
-if (devEnv) app.use(errorHandler());
+// Keep plugin.js (and any other public assets MC still loads) available.
+const publicDir = path.join(process.cwd(), 'public');
+app.use(express.static(publicDir));
 
-// Wire up routes
-routes(app, addon);
+if (devEnv) {
+  app.use(errorHandler());
+}
+
+const store = createRedisStore();
+const mermaidAPI = new MermaidChart({
+  baseURL: MC_BASE_URL,
+  clientID: process.env.MC_CLIENT_ID || '839d35ba-cfee-4c98-8cee-88f2d2caa0c4',
+  redirectURI: `${LOCAL_BASE_URL}/callback`,
+  store,
+});
+
+forgeRoutes(app, mermaidAPI);
+
+const escapeHtml = (value) =>
+  String(value).replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
+
+app.get('/callback', async (req, res) => {
+  let errorMessage;
+  try {
+    await mermaidAPI.handleAuthorizationResponse(req.query);
+  } catch (e) {
+    errorMessage = e.message;
+  }
+
+  if (errorMessage) {
+    res
+      .status(400)
+      .type('html')
+      .send(`<!doctype html><html><body style="display:flex;height:100%;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif">
+        Authentication failed.<br/>${escapeHtml(errorMessage)}<br/>Please try again later
+      </body></html>`);
+    return;
+  }
+
+  res
+    .type('html')
+    .send(`<!doctype html><html><body style="display:flex;height:100%;align-items:center;justify-content:center;font-size:24px;font-family:sans-serif">
+      Redirecting...
+      <script>window.close();</script>
+    </body></html>`);
+});
+
+app.get('/', (_req, res) => {
+  res.json({ ok: true, app: 'mermaid-chart-for-confluence' });
+});
 
 export default app;
-
-function redactJwtTokens(req) {
-  const url = req.originalUrl || req.url || "";
-  const params = new URLSearchParams(url);
-  let redacted = url;
-  params.forEach((value, key) => {
-    if (key.toLowerCase() === "jwt") {
-      redacted = redacted.replace(value, "redacted");
-    }
-  });
-  return redacted;
-}

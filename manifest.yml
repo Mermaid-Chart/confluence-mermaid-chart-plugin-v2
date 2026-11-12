@@ -3,41 +3,56 @@ app:
   connect:
     key: mermaid-chart-app-for-confluence
     remote: connect
-    authentication: jwt
   runtime:
     name: nodejs24.x
 remotes:
   - key: connect
     baseUrl: https://confluence.mermaidchart.com
-connectModules:
-  confluence:lifecycle:
-    - key: lifecycle-events
-      installed: /installed
-  confluence:dynamicContentMacros:
+    operations:
+      - compute
+      - fetch
+modules:
+  macro:
     - key: mermaid
-      name:
-        value: Mermaid chart
-      icon:
-        width: 80
-        height: 80
-        url: /icon_80x80.png
-      url: /viewer?updated={updatedAt}
-      description:
-        value: Insert Mermaid chart diagram
-      outputType: block
-      bodyType: plain-text
-      cacheable: false
-      editor:
-        url: /editor
-        width: 100%
-        height: 100%
-        cacheable: false
-        editTitle:
-          value: Edit diagram
-        insertTitle:
-          value: Insert diagram
+      resource: viewer
+      resolver:
+        endpoint: mc-remote
+      title: Mermaid chart
+      description: Insert Mermaid chart diagram
+      icon: resource:viewer;icon_80x80.png
+      unlicensedAccess:
+        - unlicensed
+        - anonymous
+      config:
+        resource: editor
+        viewportSize: max
+        openOnInsert: true
+  endpoint:
+    - key: mc-remote
+      remote: connect
+      auth:
+        appUserToken:
+          enabled: true
+resources:
+  - key: viewer
+    path: static/viewer
+  - key: editor
+    path: static/editor
 permissions:
   scopes:
-    - read:connect-confluence
-    - write:connect-confluence
-    - act-as-user:connect-confluence
+    - read:app-user-token
+    - read:user.property:confluence
+    - write:user.property:confluence
+  content:
+    styles:
+      - unsafe-inline
+  external:
+    frames:
+      - https://mermaidchart.com
+      - https://*.mermaidchart.com
+    fetch:
+      backend:
+        - remote: connect
+      client:
+        - https://mermaidchart.com
+        - https://*.mermaidchart.com
