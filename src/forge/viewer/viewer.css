@@ -1,11 +1,30 @@
+/* No overflow rule on html/body: overflow-x: hidden turns overflow-y into auto, the body then
+   scrolls inside itself, Forge never sees the full height and cuts the diagram off at the bottom.
+   max-width on #image below is what prevents sideways overflow. */
+/* Forge sizes this iframe from the body/document height. general.css sets html, body
+   { height: 100% }, which makes that height the frame's own height, not the diagram's:
+   the frame either keeps empty space or ends 8-16px short and cuts the lowest node's
+   bottom border. height: auto lets the body wrap the diagram. The 8px default margin
+   moves to padding because scrollHeight does not count margins. */
+html,
+body {
+    height: auto;
+}
+body {
+    margin: 0;
+    padding: 8px;
+}
 #content {
     display: flex;
     align-items: center;
     flex-direction: column;
     min-height: 1px;
 }
+/* main.js sets the chosen size (e.g. Extra Large = 800px) as width; it is a maximum,
+   so a wide diagram shrinks to the page width instead of overflowing. */
 #content #image {
     width: 100%;
+    max-width: 100%;
     line-height: 0;
     min-height: 1px;
 }

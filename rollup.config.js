@@ -17,7 +17,9 @@ const forgeViewer = {
     copy({
       targets: [
         { src: 'src/forge/viewer/index.html', dest: 'static/viewer' },
-        { src: 'public/icon_80x80.png', dest: 'static/viewer' }
+        { src: 'public/icon_80x80.png', dest: 'static/viewer' },
+        { src: 'public/mermaid-icon.svg', dest: 'static/viewer' },
+        { src: 'public/mermaid-icon-256.png', dest: 'static/viewer' }
       ]
     }),
     postcss({

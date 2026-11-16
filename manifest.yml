@@ -19,13 +19,16 @@ modules:
         endpoint: mc-remote
       title: Mermaid chart
       description: Insert Mermaid chart diagram
-      icon: resource:viewer;icon_80x80.png
+      icon: resource:viewer;mermaid-icon.svg
       unlicensedAccess:
         - unlicensed
         - anonymous
       config:
         resource: editor
-        viewportSize: max
+        title: Mermaid
+        # Full-screen header logo. The header does not render SVG; a 256px PNG stays sharp when scaled down.
+        icon: resource:viewer;mermaid-icon-256.png
+        viewportSize: fullscreen
         openOnInsert: true
   endpoint:
     - key: mc-remote

@@ -95,7 +95,6 @@ function App() {
         loginURL=${loginURL}
         loginState=${loginState}
         onLogin=${onLogin}
-        onCancel=${onCancel}
       />
     `;
   }

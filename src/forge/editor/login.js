@@ -7,7 +7,7 @@ import { remoteInvoke } from './remote.js';
 const html = htm.bind(h);
 let timeout;
 
-export function Login({ loginURL, loginState, onLogin, onCancel }) {
+export function Login({ loginURL, loginState, onLogin }) {
   const onLoginClick = () => {
     analytics.trackConnectToMermaidChart();
     // Custom UI iframes are sandboxed without allow-popups; window.open is blocked.
@@ -34,25 +34,8 @@ export function Login({ loginURL, loginState, onLogin, onCancel }) {
     return false;
   };
 
-  const onCancelClick = () => {
-    if (timeout) {
-      clearTimeout(timeout);
-      timeout = null;
-    }
-    if (onCancel && typeof onCancel === 'function') {
-      onCancel();
-    }
-    return false;
-  };
-
   return html`
     <div class="iframe-container">
-      <div class="iframe-cancel">
-        <button type="button" class="cancel-button" onClick=${onCancelClick}>
-          Cancel
-        </button>
-      </div>
-
       <div class="confluence-mermaid-chart-container">
         <div class="chart-selection-container">
           <h2>Sign in to edit Mermaid diagrams in Confluence</h2>
