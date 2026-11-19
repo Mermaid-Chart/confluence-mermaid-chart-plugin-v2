@@ -50,12 +50,18 @@ permissions:
     styles:
       - unsafe-inline
   external:
+    # mermaidchart.com page routes (including /oauth/frame) 301 to mermaid.ai, and the
+    # browser checks the redirect target too, so both domains must be listed.
     frames:
       - https://mermaidchart.com
       - https://*.mermaidchart.com
+      - https://mermaid.ai
+      - https://*.mermaid.ai
     fetch:
       backend:
         - remote: connect
       client:
         - https://mermaidchart.com
         - https://*.mermaidchart.com
+        - https://mermaid.ai
+        - https://*.mermaid.ai
