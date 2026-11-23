@@ -26,8 +26,6 @@ modules:
       config:
         resource: editor
         title: Mermaid
-        # Full-screen header logo. The header does not render SVG; a 256px PNG stays sharp when scaled down.
-        icon: resource:viewer;mermaid-icon-256.png
         viewportSize: fullscreen
         openOnInsert: true
   endpoint:
