@@ -1,27 +1,17 @@
-import { view } from '@forge/bridge';
+import { view, Modal } from '@forge/bridge';
 import { IMAGE_SIZES } from '../../../shared/js/constatnts.js';
 import DOMPurify from '../../../shared/vendor/dompurify/purify.es.mjs';
-import { getImageDataURI, getSvgMarkupForPreview, ensureSvgPixelDimensions, installSvgSanitizer, sanitizeSvgRoot } from '../../../shared/js/imageUtils.js';
+import { installSvgSanitizer } from '../../../shared/js/imageUtils.js';
+import { createDiagramFromConfig } from '../../../shared/js/diagramMount.js';
+import { FULLSCREEN_MODE, renderFullscreen } from './fullscreen.js';
+import { addSyncControl } from './sync.js';
 import '../../../shared/css/general.css';
 import './viewer.css';
-import { addSyncControl } from './sync.js';
+import './fullscreen.css';
 
 installSvgSanitizer(DOMPurify);
-const imageContainer = document.getElementById('image');
 
-function looksLikeImagePayload(text) {
-    if (!text || typeof text !== 'string') {
-        return false;
-    }
-    const t = text.trim();
-    if (t.startsWith('data:image') || t.startsWith('PHN2Zy') || t.startsWith('iVBOR') || t.startsWith('<svg')) {
-        return true;
-    }
-    if (t.length > 200 && !/^(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram)/i.test(t)) {
-        return /^[A-Za-z0-9+/=\s]+$/.test(t.slice(0, 80));
-    }
-    return false;
-}
+const EXPAND_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9.5 2.5h4v4M13.5 2.5L9 7M6.5 13.5h-4v-4M2.5 13.5L7 9"/></svg>';
 
 function resolveSizeWidth(size) {
     const key = size && IMAGE_SIZES[size] ? size : 'Medium';
@@ -29,87 +19,95 @@ function resolveSizeWidth(size) {
 }
 
 /**
- * Mount SVG via image/svg+xml parser — HTML innerHTML mangles foreignObject
- * + nested label-icon SVGs (FA icons like fa:fa-car).
+ * Opens this same viewer resource in a pop-up modal (no extra manifest resource).
+ * 'xlarge' is Forge's largest dialog size (968px x 90vh) that still shows as a pop-up over the page.
+ * The rendered payload travels in the modal context; if the bridge rejects that,
+ * retry without it and the modal falls back to reading the macro config.
  */
-function mountInlineSvg(svgMarkup) {
-    const doc = new DOMParser().parseFromString(svgMarkup, 'image/svg+xml');
-    if (doc.querySelector('parsererror')) {
-        return null;
-    }
-    const root = doc.documentElement;
-    if (!root || root.localName.toLowerCase() !== 'svg') {
-        return null;
-    }
-    const safeRoot = sanitizeSvgRoot(root);
-    if (!safeRoot) {
-        return null;
-    }
-    return document.importNode(safeRoot, true);
-}
+function createFullscreenOpener(payload, caption) {
+    let opening = false;
+    const open = (diagram) => new Modal({
+        size: 'xlarge',
+        closeOnEscape: true,
+        closeOnOverlayClick: true,
+        context: { mode: FULLSCREEN_MODE, diagram, caption },
+    }).open();
 
-function showImage(payload) {
-    if (!payload || !String(payload).trim()) {
-        return false;
-    }
-
-    // Prefer inline SVG with pixel dimensions from viewBox — <img> + width=100%
-    // SVGs collapse to blank boxes inside Confluence iframes.
-    let svgMarkup = getSvgMarkupForPreview(payload);
-    if (svgMarkup) {
-        svgMarkup = ensureSvgPixelDimensions(svgMarkup);
-        const svg = mountInlineSvg(svgMarkup);
-        if (svg) {
-            const vb = svg.viewBox?.baseVal;
-            if (vb && vb.width > 0 && vb.height > 0) {
-                svg.setAttribute('width', String(vb.width));
-                svg.setAttribute('height', String(vb.height));
-            }
-            svg.style.width = '100%';
-            svg.style.height = 'auto';
-            svg.setAttribute(
-                'preserveAspectRatio',
-                svg.getAttribute('preserveAspectRatio') || 'xMidYMid meet',
-            );
-            const wrap = document.createElement('div');
-            wrap.className = 'svg-inline';
-            wrap.appendChild(svg);
-            imageContainer.replaceChildren(wrap);
-            return true;
+    return async () => {
+        if (opening) {
+            return;
         }
+        opening = true;
+        try {
+            await open(payload);
+        } catch (error) {
+            console.warn('Full-screen view: opening with the diagram in context failed, retrying from macro config.', error);
+            try {
+                await open(undefined);
+            } catch (retryError) {
+                console.error('Full-screen view could not be opened.', retryError);
+            }
+        } finally {
+            opening = false;
+        }
+    };
+}
+
+function addFullscreenControl(imageContainer, diagramElement, openFullscreen, isEditing) {
+    const tooltip = 'Open diagram to zoom and pan';
+    // In the editor a click on the diagram must keep selecting the macro, so there
+    // only the expand button opens the pop-up. On the published page both do.
+    if (!isEditing) {
+        diagramElement.classList.add('mc-clickable');
+        diagramElement.title = tooltip;
+        diagramElement.addEventListener('click', (event) => {
+            // Links inside the diagram (Mermaid `click` directives) keep working.
+            if (event.target.closest?.('a')) {
+                return;
+            }
+            openFullscreen();
+        });
     }
 
-    const src = getImageDataURI(payload);
-    if (!src) {
-        return false;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'mc-expand';
+    button.title = tooltip;
+    button.setAttribute('aria-label', 'Open diagram in a pop-up to zoom and pan');
+    button.innerHTML = EXPAND_ICON;
+    button.addEventListener('click', openFullscreen);
+    imageContainer.appendChild(button);
+}
+
+function renderMacro(config, isEditing) {
+    const imageContainer = document.getElementById('image');
+    if (config.caption) {
+        document.getElementById('caption').innerText = config.caption;
     }
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = 'Mermaid diagram';
-    imageContainer.replaceChildren(img);
-    return true;
+    imageContainer.style.width = `${resolveSizeWidth(config.size)}px`;
+    const diagram = createDiagramFromConfig(config);
+    if (!diagram) {
+        return;
+    }
+    imageContainer.replaceChildren(diagram.element);
+    addFullscreenControl(imageContainer, diagram.element, createFullscreenOpener(diagram.payload, config.caption), isEditing);
 }
 
-function tryShow(payload) {
-    return looksLikeImagePayload(payload) && showImage(payload);
-}
-
-// diagramCode is the current save location; diagramImage and the plain-text
-// body (__bodyContent) are where older Connect saves put the image.
-const { extension: { config = {}, isEditing, content }, accountId } = await view.getContext();
-if (config.caption) {
-    document.getElementById('caption').innerText = config.caption;
-}
-imageContainer.style.width = `${resolveSizeWidth(config.size)}px`;
-tryShow(config.diagramCode) || tryShow(config.diagramImage) || tryShow(config.__bodyContent);
-
-// Sync updates the published page, so it is not offered while the page is being edited.
-const pageId = content?.type === 'page' ? content.id : undefined;
-if (accountId && config.documentID && isEditing !== true && pageId) {
-    addSyncControl({
-        container: imageContainer,
-        documentID: config.documentID,
-        pageId: String(pageId),
-        render: showImage,
-    });
+const { extension = {}, accountId } = await view.getContext();
+if (extension.modal?.mode === FULLSCREEN_MODE) {
+    renderFullscreen(extension);
+} else {
+    const config = extension.config || {};
+    const isEditing = extension.isEditing === true;
+    renderMacro(config, isEditing);
+    // Sync updates the published page, so it is not offered while the page is being edited.
+    const pageId = extension.content?.type === 'page' ? extension.content.id : undefined;
+    if (accountId && config.documentID && !isEditing && pageId) {
+        addSyncControl({
+            container: document.getElementById('image'),
+            documentID: config.documentID,
+            pageId: String(pageId),
+            render: (svg) => renderMacro({ ...config, diagramCode: svg }, isEditing),
+        });
+    }
 }
