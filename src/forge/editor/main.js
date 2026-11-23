@@ -4,6 +4,7 @@ import htm from 'htm';
 import { view } from '@forge/bridge';
 import { Login } from './login.js';
 import { Form } from './form.js';
+import { clearMermaidChartSession } from './clearSession.js';
 import { remoteInvoke } from './remote.js';
 import '../../../shared/css/general.css';
 import '../../../shared/css/editor.css';
@@ -31,6 +32,11 @@ function App() {
         setLoginURL(init.loginURL || '');
         setLoginState(init.loginState || '');
         setBoot({ loading: false, error: null });
+        if (!init.mcAccessToken) {
+          // Not signed in: drop any cookie left from an earlier account, so "Sign in" asks
+          // Mermaid Chart for the account the browser is using now.
+          clearMermaidChartSession(init.MC_BASE_URL);
+        }
       } catch (e) {
         console.error({ err: e.message }, 'editor-init failed');
         if (!cancelled) {
@@ -63,6 +69,9 @@ function App() {
     try {
       const init = await remoteInvoke('/forge/editor-init');
       window.MC_BASE_URL = init.MC_BASE_URL;
+      // Done before the login screen's "Sign in" is clicked, so the next sign-in can't reuse
+      // the account that just signed out.
+      await clearMermaidChartSession(init.MC_BASE_URL);
       setLoginURL(init.loginURL || '');
       setLoginState(init.loginState || '');
     } catch (e) {

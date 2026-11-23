@@ -4,6 +4,7 @@ import DOMPurify from '../../../shared/vendor/dompurify/purify.es.mjs';
 import { getImageDataURI, getSvgMarkupForPreview, ensureSvgPixelDimensions, installSvgSanitizer, sanitizeSvgRoot } from '../../../shared/js/imageUtils.js';
 import '../../../shared/css/general.css';
 import './viewer.css';
+import { addSyncControl } from './sync.js';
 
 installSvgSanitizer(DOMPurify);
 const imageContainer = document.getElementById('image');
@@ -95,9 +96,20 @@ function tryShow(payload) {
 
 // diagramCode is the current save location; diagramImage and the plain-text
 // body (__bodyContent) are where older Connect saves put the image.
-const { extension: { config = {} } } = await view.getContext();
+const { extension: { config = {}, isEditing, content }, accountId } = await view.getContext();
 if (config.caption) {
     document.getElementById('caption').innerText = config.caption;
 }
 imageContainer.style.width = `${resolveSizeWidth(config.size)}px`;
 tryShow(config.diagramCode) || tryShow(config.diagramImage) || tryShow(config.__bodyContent);
+
+// Sync updates the published page, so it is not offered while the page is being edited.
+const pageId = content?.type === 'page' ? content.id : undefined;
+if (accountId && config.documentID && isEditing !== true && pageId) {
+    addSyncControl({
+        container: imageContainer,
+        documentID: config.documentID,
+        pageId: String(pageId),
+        render: showImage,
+    });
+}

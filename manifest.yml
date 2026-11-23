@@ -46,6 +46,9 @@ permissions:
     - read:app-user-token
     - read:user.property:confluence
     - write:user.property:confluence
+    # Sync saves the latest diagram into the page as the signed-in user.
+    - read:page:confluence
+    - write:page:confluence
   content:
     styles:
       - unsafe-inline

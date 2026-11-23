@@ -10,6 +10,7 @@
     "start": "node --env-file=.env scripts/server.js",
     "watch-server": "nodemon -e js scripts/server.js",
     "lint": "eslint routes utils api",
+    "test": "node --test \"utils/**/*.test.js\"",
     "build": "rollup -c",
     "build:watch": "rollup -c -w",
     "build:forge": "rollup -c && forge lint"

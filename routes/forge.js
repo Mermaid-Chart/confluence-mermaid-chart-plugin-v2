@@ -1,3 +1,5 @@
+import { saveDiagramToPage } from '../utils/confluencePage.js';
+import { fetchLatestDiagram } from '../utils/diagramSync.js';
 import { requireForgeInvocation } from '../utils/forgeAuth.js';
 import { fetchForgeUserToken, saveForgeUserToken } from '../utils/forgeUserProps.js';
 
@@ -75,6 +77,35 @@ export default function forgeRoutes(app, mermaidAPI) {
     } catch (e) {
       console.error({ err: e.message }, 'check_token failed');
       return res.status(500).json({ error: 'check_token failed', details: e.message });
+    }
+  });
+
+  // Sync button on the diagram: fetches the diagram as it is now in Mermaid Chart with the
+  // signed-in user's token and saves it into the published page, so it stays after a reload.
+  app.post('/forge/sync', requireForgeInvocation, async (req, res) => {
+    try {
+      const { accountId, apiBaseUrl, userToken } = req.forge;
+      const token = await fetchForgeUserToken({ apiBaseUrl, accountId, userToken });
+      if (!token) {
+        return res.json({ status: 'signed-out' });
+      }
+      const documentID = String(req.query.documentID ?? '');
+      const latest = await fetchLatestDiagram({ baseURL: MC_BASE_URL, token, documentID });
+      if (latest.status !== 'synced') {
+        return res.json(latest);
+      }
+      const saved = await saveDiagramToPage({
+        apiBaseUrl,
+        userToken,
+        pageId: String(req.query.pageId ?? ''),
+        documentID,
+        code: latest.code,
+        svg: latest.svg,
+      });
+      return res.json(saved === 'saved' || saved === 'unchanged' ? latest : { status: saved });
+    } catch (e) {
+      console.error({ err: e.message }, 'sync failed');
+      return res.status(500).json({ error: 'sync failed', details: e.message });
     }
   });
 
