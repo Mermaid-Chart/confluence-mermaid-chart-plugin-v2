@@ -12,7 +12,7 @@ import forgeRoutes from '../routes/forge.js';
 
 const MC_BASE_URL = process.env.MC_BASE_URL || 'https://test.mermaidchart.com';
 const LOCAL_BASE_URL =
-  process.env.LOCAL_BASE_URL || 'https://confluence.mermaidchart.com';
+  process.env.LOCAL_BASE_URL || 'https://confluencetest.mermaidchart.com';
 const PORT = process.env.PORT || 3000;
 
 const app = express();
