@@ -58,9 +58,20 @@ export async function fetchLatestDiagram({ baseURL, token, documentID, fetchImpl
     return { status: 'error' };
   }
 
-  const svgResponse = await fetchImpl(`${baseURL}/raw/${documentID}?theme=light&format=svg`, {
-    headers: { Authorization: headers.Authorization },
+  // mermaidchart.com/raw 301s to mermaid.ai, and fetch drops the token on a redirect to another
+  // host, so follow it here, sending the token only to Mermaid Chart's own hosts.
+  const svgHeaders = { Authorization: headers.Authorization };
+  let svgResponse = await fetchImpl(`${baseURL}/raw/${documentID}?theme=light&format=svg`, {
+    headers: svgHeaders,
+    redirect: 'manual',
   });
+  const location = svgResponse.status >= 300 && svgResponse.headers?.get('location');
+  if (location) {
+    const target = new URL(location, baseURL);
+    if (target.protocol === 'https:' && /(^|\.)(mermaidchart\.com|mermaid\.ai)$/.test(target.hostname)) {
+      svgResponse = await fetchImpl(target.href, { headers: svgHeaders });
+    }
+  }
   if (!svgResponse.ok) {
     return { status: 'error' };
   }

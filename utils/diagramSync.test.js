@@ -94,3 +94,51 @@ describe('fetchLatestDiagram', () => {
     assert.equal(calls.length, 0);
   });
 });
+
+describe('fetchLatestDiagram when Mermaid Chart redirects the SVG to another host', () => {
+  // test.mermaidchart.com/raw/... answers 301 to test.mermaid.ai, and fetch drops the
+  // Authorization header when it follows a redirect to another host.
+  const redirectingFetch = (location) => {
+    const calls = [];
+    const fetchImpl = async (url, options) => {
+      calls.push({ url: String(url), options });
+      if (String(url).includes('/rest-api/')) {
+        return { ok: true, status: 200, json: async () => ({ code: 'flowchart LR\n  A --> B' }) };
+      }
+      if (String(url).startsWith('https://test.mermaidchart.com/raw/')) {
+        return { ok: false, status: 301, headers: new Headers({ location }) };
+      }
+      const signedIn = options?.headers?.Authorization === 'Bearer mc-token';
+      return { ok: signedIn, status: signedIn ? 200 : 404, text: async () => '<svg id="latest"></svg>' };
+    };
+    return { fetchImpl, calls };
+  };
+  const syncFrom = (fetchImpl) =>
+    fetchLatestDiagram({
+      baseURL: 'https://test.mermaidchart.com',
+      token: 'mc-token',
+      documentID,
+      fetchImpl,
+    });
+
+  it('follows the redirect to mermaid.ai with the token', async () => {
+    const { fetchImpl, calls } = redirectingFetch(
+      `https://test.mermaid.ai/raw/${documentID}?theme=light&format=svg`,
+    );
+
+    assert.deepEqual(await syncFrom(fetchImpl), {
+      status: 'synced',
+      code: 'flowchart LR\n  A --> B',
+      svg: '<svg id="latest"></svg>',
+    });
+    assert.equal(calls[1].options.redirect, 'manual');
+    assert.equal(calls[2].url, `https://test.mermaid.ai/raw/${documentID}?theme=light&format=svg`);
+  });
+
+  it('never sends the token to a host that is not Mermaid Chart', async () => {
+    const { fetchImpl, calls } = redirectingFetch('https://evil.example/raw');
+
+    assert.deepEqual(await syncFrom(fetchImpl), { status: 'error' });
+    assert.equal(calls.length, 2);
+  });
+});
