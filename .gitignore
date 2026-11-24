@@ -11,4 +11,5 @@ views/node/*.js
 views/node/*.js.map
 .vercel
 dist/
-
+static/
+.env

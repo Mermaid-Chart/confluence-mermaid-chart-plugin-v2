@@ -1,0 +1,88 @@
+/* "Sync" button on the diagram. Absolutely positioned, so it adds no height to #image
+   and Forge sizes the macro iframe as before. */
+#content #image {
+    position: relative;
+}
+#content #image > .mc-sync {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-color);
+    box-shadow: 0 1px 2px rgba(9, 30, 66, 0.15);
+    opacity: 0.8;
+    cursor: pointer;
+    line-height: 0;
+}
+/* Sits left of the full-screen button when that one is shown. */
+#content #image > .mc-expand ~ .mc-sync {
+    right: 40px;
+}
+#content #image:hover > .mc-sync,
+#content #image > .mc-sync:focus-visible {
+    opacity: 1;
+}
+#content #image > .mc-sync:hover {
+    background: #f1f2f4;
+}
+#content #image > .mc-sync:focus-visible {
+    outline: 2px solid #388bff;
+    outline-offset: 1px;
+}
+#content #image > .mc-sync:disabled {
+    cursor: progress;
+}
+#content #image > .mc-sync.is-syncing svg {
+    animation: mc-sync-spin 0.9s linear infinite;
+}
+/* "Sync" label under the button on hover and keyboard focus. */
+#content #image > .mc-sync::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #172b4d;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+#content #image > .mc-sync:hover::after,
+#content #image > .mc-sync:focus-visible::after {
+    opacity: 1;
+}
+/* general.css colours every element; let the icon stroke follow the button colour. */
+.mc-sync * {
+    color: inherit;
+}
+@keyframes mc-sync-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #content #image > .mc-sync.is-syncing svg {
+        animation: none;
+    }
+}
+.mc-sync-notice {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #ae2e24;
+    text-align: center;
+}
