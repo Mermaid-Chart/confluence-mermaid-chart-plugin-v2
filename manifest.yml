@@ -11,12 +11,15 @@ remotes:
     operations:
       - compute
       - fetch
+    auth:
+      appUserToken:
+        enabled: true
 modules:
   macro:
     - key: mermaid
       resource: viewer
       resolver:
-        endpoint: mc-remote
+        function: resolver
       title: Mermaid chart
       description: Insert Mermaid chart diagram
       icon: resource:viewer;mermaid-icon.svg
@@ -28,12 +31,9 @@ modules:
         title: Mermaid
         viewportSize: fullscreen
         openOnInsert: true
-  endpoint:
-    - key: mc-remote
-      remote: connect
-      auth:
-        appUserToken:
-          enabled: true
+  function:
+    - key: resolver
+      handler: index.handler
 resources:
   - key: viewer
     path: static/viewer

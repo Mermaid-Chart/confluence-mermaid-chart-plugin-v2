@@ -1,13 +1,10 @@
-import { invokeRemote } from '@forge/bridge';
+import { invoke } from '@forge/bridge';
 
 /**
- * Call the macro resolver endpoint (mc-remote). Returns parsed JSON body on 2xx.
+ * Call the remote through the macro's resolver function (src/index.js). Returns parsed JSON body on 2xx.
  */
 export async function remoteInvoke(path, { method = 'GET' } = {}) {
-  const result = await invokeRemote({
-    path,
-    method,
-  });
+  const result = await invoke('remote', { path, method });
   const status = result.status ?? result.statusCode;
   if (typeof status !== 'number' || status < 200 || status >= 300) {
     const err = new Error(`Remote ${method} ${path} failed (${status})`);

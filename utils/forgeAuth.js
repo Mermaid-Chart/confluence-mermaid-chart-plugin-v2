@@ -21,7 +21,8 @@ export async function requireForgeInvocation(req, res, next) {
       issuer: 'forge/invocation-token',
     });
 
-    const accountId = payload.principal;
+    // Calls from the resolver function (src/index.js) name the user in a header instead.
+    const accountId = payload.principal || req.headers['x-forge-account-id'];
     const apiBaseUrl = payload.app?.apiBaseUrl;
     const userToken = req.headers['x-forge-oauth-user'];
 

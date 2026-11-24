@@ -22,7 +22,7 @@ Confluence page
             └─ plugin.js postMessage save/cancel/logout → view.submit({ config }) / view.close()
 ```
 
-- `invokeRemote` goes through the macro's `resolver.endpoint` (`mc-remote`) to the `connect` remote. Forge signs every call with a Forge Invocation Token (FIT) and, because `appUserToken` is enabled, adds the user's token in `x-forge-oauth-user`.
+- The UI calls the macro's resolver function (`src/index.js`), which forwards to the `connect` remote with `invokeRemote` from `@forge/api`. A call from the browser would carry the macro config (with the diagram image) in its token header, which Vercel refuses as too large (494). Forge signs every call with a Forge Invocation Token (FIT) and, because `remotes[connect].auth.appUserToken` is enabled, adds the user's token in `x-forge-oauth-user`.
 - `utils/forgeAuth.js` verifies the FIT against Atlassian's JWKS (audience = the app id) on every `/forge/*` route.
 - The Mermaid Chart token is stored per user in a Confluence user property (`utils/forgeUserProps.js`), using the app user token. Redis only holds the short-lived sign-in state; it does not store diagrams.
 - Diagrams are saved in the macro config (`diagramCode` holds the image, `mcSourceCode` the Mermaid source). Older Connect saves are still read from `diagramImage` or the legacy body (`__bodyContent`).
