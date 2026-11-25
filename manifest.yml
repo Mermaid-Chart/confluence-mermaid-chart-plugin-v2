@@ -1,5 +1,5 @@
 app:
-  id: ari:cloud:ecosystem::app/32c45076-0ed9-45c6-9e7e-a5d4a00fc88f
+  id: ari:cloud:ecosystem::app/1a45d0d3-746b-4a4d-a01d-c628d62659c7
   connect:
     key: mermaid-chart-app-for-confluence
     remote: connect

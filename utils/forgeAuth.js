@@ -1,6 +1,6 @@
 import * as jose from 'jose';
 
-const APP_ID = 'ari:cloud:ecosystem::app/32c45076-0ed9-45c6-9e7e-a5d4a00fc88f';
+const APP_ID = 'ari:cloud:ecosystem::app/1a45d0d3-746b-4a4d-a01d-c628d62659c7';
 const JWKS_URL = 'https://forge.cdn.prod.atlassian-dev.net/.well-known/jwks.json';
 const JWKS = jose.createRemoteJWKSet(new URL(JWKS_URL));
 
