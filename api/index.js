@@ -10,9 +10,12 @@ import { MermaidChart } from '../utils/MermaidChart.js';
 import { createRedisStore } from '../utils/redisStore.js';
 import forgeRoutes from '../routes/forge.js';
 
-const MC_BASE_URL = process.env.MC_BASE_URL || 'https://test.mermaidchart.com';
+// TESTING ONLY: defaults point at the plug-153 branch deploy and the collab preview.
+const MC_BASE_URL =
+  process.env.MC_BASE_URL || 'https://collab-git-temp-confluence-testing-mc-prod.vercel.app';
 const LOCAL_BASE_URL =
-  process.env.LOCAL_BASE_URL || 'https://confluencetest.mermaidchart.com';
+  process.env.LOCAL_BASE_URL ||
+  'https://confluence-mermaid-chart-plugin-git-plug-153-bug-fixes-mc-prod.vercel.app';
 const PORT = process.env.PORT || 3000;
 
 const app = express();

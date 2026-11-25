@@ -7,7 +7,7 @@ app:
     name: nodejs24.x
 remotes:
   - key: connect
-    baseUrl: https://confluencetest.mermaidchart.com
+    baseUrl: https://confluence-mermaid-chart-plugin-git-plug-153-bug-fixes-mc-prod.vercel.app
     operations:
       - compute
       - fetch
@@ -58,10 +58,14 @@ permissions:
       - https://*.mermaidchart.com
       - https://mermaid.ai
       - https://*.mermaid.ai
+      # TESTING ONLY: Vercel preview of Mermaid Chart (collab) used as MC_BASE_URL.
+      # Remove before deploying to a real environment.
+      - https://collab-git-temp-confluence-testing-mc-prod.vercel.app
     fetch:
       backend:
         - remote: connect
       client:
+        - https://collab-git-temp-confluence-testing-mc-prod.vercel.app
         - https://mermaidchart.com
         - https://*.mermaidchart.com
         - https://mermaid.ai
