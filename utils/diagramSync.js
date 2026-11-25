@@ -61,7 +61,8 @@ export async function fetchLatestDiagram({ baseURL, token, documentID, fetchImpl
   // mermaidchart.com/raw 301s to mermaid.ai, and fetch drops the token on a redirect to another
   // host, so follow it here, sending the token only to Mermaid Chart's own hosts.
   const svgHeaders = { Authorization: headers.Authorization };
-  let svgResponse = await fetchImpl(`${baseURL}/raw/${documentID}?theme=light&format=svg`, {
+  // look=classic draws it as the editor saves it (the diagram's own theme), not /raw's default neo look.
+  let svgResponse = await fetchImpl(`${baseURL}/raw/${documentID}?theme=light&format=svg&look=classic`, {
     headers: svgHeaders,
     redirect: 'manual',
   });

@@ -37,7 +37,7 @@ describe('fetchLatestDiagram', () => {
       svg: '<svg id="latest"></svg>',
     });
     assert.equal(calls[0].url, `${baseURL}/rest-api/documents/${documentID}`);
-    assert.equal(calls[1].url, `${baseURL}/raw/${documentID}?theme=light&format=svg`);
+    assert.equal(calls[1].url, `${baseURL}/raw/${documentID}?theme=light&format=svg&look=classic`);
     assert.equal(calls[0].options.headers.Authorization, 'Bearer mc-token');
   });
 
