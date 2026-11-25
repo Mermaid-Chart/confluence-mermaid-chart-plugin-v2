@@ -1,3 +1,4 @@
+import { router } from '@forge/bridge';
 import { remoteInvoke } from '../editor/remote.js';
 import './sync.css';
 
@@ -11,7 +12,8 @@ function syncMessage(status) {
         deleted: `This diagram was deleted from Mermaid Chart. ${EDIT} to import the copy saved on this page.`,
         'no-access': `This diagram is in a Mermaid Chart account you can't open. ${EDIT} to ask the owner for access.`,
         unavailable: `This diagram couldn't be loaded from your Mermaid Chart account. ${EDIT} to see why.`,
-        'signed-out': `Sign in to Mermaid Chart to sync this diagram. ${EDIT} to sign in.`,
+        'signed-out': 'Sign in to Mermaid Chart to sync this diagram.',
+        unchanged: 'This diagram is already up to date.',
         'no-page-access': 'You need permission to edit this page to sync this diagram.',
         'not-on-page': "This diagram isn't on the published page yet. Publish the page, then sync.",
         'too-large': `The latest version is too large to save here. ${EDIT} to save a smaller copy.`,
@@ -23,6 +25,30 @@ function syncMessage(status) {
 function syncOnPage(documentID, pageId) {
     const query = new URLSearchParams({ documentID, pageId });
     return remoteInvoke(`/forge/sync?${query}`, { method: 'POST' });
+}
+
+/**
+ * Opens Mermaid Chart sign-in in a new tab, as the editor does, and resolves once the
+ * remote has stored the token. Rejects if sign-in is not finished within 10 minutes.
+ */
+async function signIn() {
+    const init = await remoteInvoke('/forge/editor-init');
+    if (init.user) {
+        return;
+    }
+    // Custom UI iframes are sandboxed without allow-popups; window.open is blocked.
+    router.open(init.loginURL);
+    const deadline = Date.now() + 10 * 60 * 1000;
+    while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+            await remoteInvoke(`/forge/check_token?state=${encodeURIComponent(init.loginState)}`);
+            return;
+        } catch {
+            // 404 until the user finishes signing in.
+        }
+    }
+    throw new Error('Sign-in was not completed');
 }
 
 /**
@@ -47,12 +73,33 @@ export function addSyncControl({ container, documentID, pageId, render }) {
     notice.hidden = true;
     container.after(notice);
 
-    const showNotice = (text) => {
-        notice.textContent = text;
-        notice.hidden = !text;
+    // render() rebuilds the container, so look the button row up each time.
+    const placeButton = () => (container.querySelector('.mc-actions') ?? container).prepend(button);
+
+    const showNotice = (status) => {
+        notice.textContent = status ? syncMessage(status) : '';
+        notice.classList.toggle('is-info', status === 'unchanged');
+        notice.hidden = !status;
+        if (status === 'signed-out') {
+            const signInLink = document.createElement('button');
+            signInLink.type = 'button';
+            signInLink.className = 'mc-sync-signin';
+            signInLink.textContent = 'Sign in';
+            signInLink.addEventListener('click', async () => {
+                signInLink.disabled = true;
+                try {
+                    await signIn();
+                    await sync();
+                } catch (error) {
+                    console.error({ err: error.message }, 'Sign-in failed');
+                    showNotice('signed-out');
+                }
+            });
+            notice.append(signInLink);
+        }
     };
 
-    button.addEventListener('click', async () => {
+    async function sync() {
         if (button.disabled) {
             return;
         }
@@ -64,18 +111,24 @@ export function addSyncControl({ container, documentID, pageId, render }) {
             if (result?.status === 'synced' && typeof result.svg === 'string') {
                 render(result.svg);
             } else {
-                showNotice(syncMessage(result?.status));
+                showNotice(result?.status ?? 'error');
             }
         } catch (error) {
             console.error({ err: error.message }, 'Sync failed');
-            showNotice(syncMessage('error'));
+            showNotice('error');
         } finally {
             button.disabled = false;
             button.classList.remove('is-syncing');
-            // render() replaces the container's children, so put the button back.
-            container.appendChild(button);
+            placeButton();
         }
-    });
+    }
 
-    container.appendChild(button);
+    button.addEventListener('click', () => {
+        // The pointer is still over the button, so hide its label until the pointer leaves.
+        button.classList.add('mc-tooltip-off');
+        sync();
+    });
+    button.addEventListener('mouseleave', () => button.classList.remove('mc-tooltip-off'));
+
+    placeButton();
 }

@@ -102,7 +102,8 @@ export default function forgeRoutes(app, mermaidAPI) {
         code: latest.code,
         svg: latest.svg,
       });
-      return res.json(saved === 'saved' || saved === 'unchanged' ? latest : { status: saved });
+      // 'unchanged' lets the button say the diagram is already up to date.
+      return res.json(saved === 'saved' ? latest : { status: saved });
     } catch (e) {
       console.error({ err: e.message }, 'sync failed');
       return res.status(500).json({ error: 'sync failed', details: e.message });

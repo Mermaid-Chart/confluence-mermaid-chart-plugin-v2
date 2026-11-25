@@ -53,7 +53,7 @@ function createFullscreenOpener(payload, caption) {
     };
 }
 
-function addFullscreenControl(imageContainer, diagramElement, openFullscreen, isEditing) {
+function addFullscreenControl(actions, diagramElement, openFullscreen, isEditing) {
     const tooltip = 'Open diagram to zoom and pan';
     // In the editor a click on the diagram must keep selecting the macro, so there
     // only the expand button opens the pop-up. On the published page both do.
@@ -76,7 +76,7 @@ function addFullscreenControl(imageContainer, diagramElement, openFullscreen, is
     button.setAttribute('aria-label', 'Open diagram in a pop-up to zoom and pan');
     button.innerHTML = EXPAND_ICON;
     button.addEventListener('click', openFullscreen);
-    imageContainer.appendChild(button);
+    actions.appendChild(button);
 }
 
 function renderMacro(config, isEditing) {
@@ -89,8 +89,11 @@ function renderMacro(config, isEditing) {
     if (!diagram) {
         return;
     }
-    imageContainer.replaceChildren(diagram.element);
-    addFullscreenControl(imageContainer, diagram.element, createFullscreenOpener(diagram.payload, config.caption), isEditing);
+    // The buttons sit in a row above the diagram, so they never cover it.
+    const actions = document.createElement('div');
+    actions.className = 'mc-actions';
+    imageContainer.replaceChildren(actions, diagram.element);
+    addFullscreenControl(actions, diagram.element, createFullscreenOpener(diagram.payload, config.caption), isEditing);
 }
 
 const { extension = {}, accountId } = await view.getContext();
