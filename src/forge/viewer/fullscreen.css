@@ -1,16 +1,16 @@
-/* Page view: open-full-screen control. Absolutely positioned, so it adds no height
-   to #image and Forge sizes the macro iframe exactly as before. */
-#content #image {
-    position: relative;
+/* Page view: the Sync and open-full-screen buttons sit in a row above the diagram
+   (main.js adds .mc-actions), so they never cover it. */
+#content #image > .mc-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-bottom: 4px;
 }
 /* Published page only (main.js adds .mc-clickable when not editing). */
 #content #image > .mc-clickable {
     cursor: pointer;
 }
-#content #image > .mc-expand {
-    position: absolute;
-    top: 6px;
-    right: 6px;
+#content #image .mc-expand {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -27,14 +27,14 @@
     line-height: 0;
     transition: opacity 120ms ease, background-color 120ms ease;
 }
-#content #image:hover > .mc-expand,
-#content #image > .mc-expand:focus-visible {
+#content #image:hover .mc-expand,
+#content #image .mc-expand:focus-visible {
     opacity: 1;
 }
-#content #image > .mc-expand:hover {
+#content #image .mc-expand:hover {
     background: #f1f2f4;
 }
-#content #image > .mc-expand:focus-visible {
+#content #image .mc-expand:focus-visible {
     outline: 2px solid #388bff;
     outline-offset: 1px;
 }
