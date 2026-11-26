@@ -1,0 +1,161 @@
+/* Page view: the Sync and open-full-screen buttons sit in a row above the diagram
+   (main.js adds .mc-actions), so they never cover it. */
+#content #image > .mc-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+/* Published page only (main.js adds .mc-clickable when not editing). */
+#content #image > .mc-clickable {
+    cursor: pointer;
+}
+#content #image .mc-expand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-color);
+    box-shadow: 0 1px 2px rgba(9, 30, 66, 0.15);
+    opacity: 0.8;
+    cursor: pointer;
+    line-height: 0;
+    transition: opacity 120ms ease, background-color 120ms ease;
+}
+#content #image:hover .mc-expand,
+#content #image .mc-expand:focus-visible {
+    opacity: 1;
+}
+#content #image .mc-expand:hover {
+    background: #f1f2f4;
+}
+#content #image .mc-expand:focus-visible {
+    outline: 2px solid #388bff;
+    outline-offset: 1px;
+}
+
+/* general.css colours every element; let icon strokes follow the button colour. */
+.mc-expand *,
+.mc-fs-btn * {
+    color: inherit;
+}
+
+/* Zoom pop-up (same viewer resource, html.mc-fs set by fullscreen.js).
+   Fills the modal iframe with a fixed layout; the page view's height:auto rules do not apply here. */
+html.mc-fs,
+html.mc-fs body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+.mc-fs-root {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+}
+.mc-fs-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 12px 8px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: #fff;
+}
+.mc-fs-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+}
+.mc-fs-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+.mc-fs-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-color);
+    font-weight: 500;
+    cursor: pointer;
+}
+.mc-fs-btn:hover {
+    background: #091e420f;
+}
+.mc-fs-btn:active {
+    background: #091e4224;
+}
+.mc-fs-btn:focus-visible {
+    outline: 2px solid #388bff;
+    outline-offset: 1px;
+}
+.mc-fs-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    background: transparent;
+}
+.mc-fs-zoom {
+    min-width: 52px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--label-color);
+}
+.mc-fs-sep {
+    width: 1px;
+    height: 20px;
+    margin: 0 6px;
+    background: var(--border-color);
+}
+.mc-fs-viewport {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: hidden;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    outline: none;
+}
+.mc-fs-viewport.is-panning {
+    cursor: grabbing;
+}
+.mc-fs-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    line-height: 0;
+}
+/* Root diagram only; nested .label-icon SVGs keep their own size. */
+.mc-fs-stage > .svg-inline > svg,
+.mc-fs-stage > img {
+    display: block;
+    max-width: none;
+}
+.mc-fs-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    transform: translate(-50%, -50%);
+    line-height: 1.4;
+    pointer-events: none;
+}
