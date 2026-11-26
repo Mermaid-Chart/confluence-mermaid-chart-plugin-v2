@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the editor */
+.card.isOpen {
+  @apply flex-grow;
+}
+
+.grid-bg-light {
+  background-size: 30px 30px;
+  background-image: radial-gradient(circle, #e4e4e48c 2px, #0000 2px);
+}
+
+.grid-bg-dark {
+  background-size: 30px 30px;
+  background-image: radial-gradient(circle, #46464646 2px, #0000 2px);
+}
+
+/* Ensure color utilities are included */
+@layer utilities {
+  .text-muted-foreground {
+    color: hsl(215.4 16.3% 46.9%);
+  }
+  
+  .bg-background {
+    background-color: hsl(0 0% 100%);
+  }
+  
+  .text-accent {
+    color: hsl(210 40% 94%);
+  }
+  
+  .text-accent-foreground {
+    color: hsl(222.2 84% 4.9%);
+  }
+  
+  .bg-accent {
+    background-color: hsl(210 40% 94%);
+  }
+  
+  .hover\:bg-accent:hover {
+    background-color: hsl(210 40% 94%);
+  }
+  
+  .hover\:text-accent-foreground:hover {
+    color: hsl(222.2 84% 4.9%);
+  }
+  
+  .bg-muted {
+    background-color: hsl(210 40% 96%);
+  }
+  
+  .text-destructive {
+    color: hsl(0 84.2% 60.2%);
+  }
+  
+  .bg-destructive {
+    background-color: hsl(0 84.2% 60.2%);
+  }
+  
+  .text-destructive-foreground {
+    color: hsl(210 40% 98%);
+  }
+  
+  .hover\:bg-destructive\/90:hover {
+    background-color: hsl(0 84.2% 60.2% / 0.9);
+  }
+  
+  .border-input {
+    border-color: hsl(214.3 31.8% 91.4%);
+  }
+  
+  .border-muted {
+    border-color: hsl(210 40% 96%);
+  }
+  
+  .rounded-2xl {
+    border-radius: 1rem;
+  }
+}

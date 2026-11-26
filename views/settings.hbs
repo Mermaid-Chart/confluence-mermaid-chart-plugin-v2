@@ -1,0 +1,63 @@
+{{!< layout}}
+<div class="ac-content" id="content">
+    <form action="/settings" method="post" id="form" class="form-container">
+        <div class="form-row">
+            <label for="token" class="label">Security token</label>
+            <div class="field">
+                <textarea rows="5" id="token" name="token">{{securityToken}}</textarea>
+            </div>
+        </div>
+        <div class="form-row" id="error-message">
+        </div>
+        <div class="form-row" id="saved">Saved</div>
+        <div class="form-row">
+            <button type="submit">Submit</button>
+        </div>
+    </form>
+</div>
+<style>
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+    form.error *, form.error .form-row .label {
+        color: var(--error-color);
+    }
+    #error-message {
+        display: none
+    }
+    #saved {
+        display: none;
+        color: darkgreen;
+    }
+    form.error #error-message {
+        display: block
+    }
+</style>
+<script type="module">
+    const form = document.getElementById('form');
+    const saved = document.getElementById('saved');
+    form.onsubmit = () => {
+        const tokenToSave = document.getElementById('token').value;
+        form.classList.remove('error');
+        saved.style.display = 'none';
+        fetch('/settings', {
+            method: 'POST',
+            body: JSON.stringify({
+                securityToken: tokenToSave,
+            }),
+            headers: {
+                Authorization: `JWT {{token}}`,
+                'Content-Type': 'application/json',
+            },
+        }).then((response) => {
+            if (!response.ok) return Promise.reject(response);
+            saved.style.display = 'block';
+        }).catch(response => {
+            form.classList.add('error');
+            const ErrElm = document.getElementById('error-message');
+            ErrElm.innerText = response.status === 400 ? 'Invalid security token' : 'Something went wrong';
+        });
+        return false;
+    };
+</script>

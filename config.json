@@ -1,0 +1,41 @@
+{
+  "development": {
+    "port": 3000,
+    "errorTemplate": true,
+    "store": {
+      "adapter": "sequelize",
+      "dialect": "sqlite3",
+      "logging": false,
+      "type": "memory"
+    }
+  },
+  "preview": {
+    "port": "$PORT",
+    "errorTemplate": true,
+    "localBaseUrl": "https://confluence.mermaidchart.com",
+    "allowedBaseUrls": ["$VERCEL_BRANCH_URL"],
+    "store": {
+      "adapter": "@upstash/redis",
+      "url": "$KV_REST_API_URL",
+      "token": "$KV_REST_API_TOKEN"
+    }
+  },
+  "production": {
+    "port": "$PORT",
+    "errorTemplate": true,
+    "localBaseUrl": "https://confluence.mermaidchart.com",
+    "allowedBaseUrls": ["$VERCEL_BRANCH_URL"],
+    "store": {
+      "adapter": "@upstash/redis",
+      "url": "$KV_REST_API_URL",
+      "token": "$KV_REST_API_TOKEN"
+    },
+    "whitelist": [
+      "*.jira-dev.com",
+      "*.atlassian.net",
+      "*.atlassian.com",
+      "*.jira.com"
+    ]
+  },
+  "product": "confluence"
+}
