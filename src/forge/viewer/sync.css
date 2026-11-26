@@ -80,7 +80,7 @@
     color: #ae2e24;
     text-align: center;
 }
-/* "Already up to date" is information, not an error. */
+/* Progress and success ("Syncing…", "Diagram updated.", "already up to date") are information, not errors. */
 .mc-sync-notice.is-info {
     color: var(--text-color);
 }
