@@ -8,9 +8,9 @@
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "runtimeArgs": ["-r", "esm", "--inspect-brk", "--preserve-symlinks"],
+            "runtimeArgs": ["--env-file=.env", "--inspect-brk"],
             "name": "Start Server",
-            "program": "${workspaceFolder}/app.js",
+            "program": "${workspaceFolder}/scripts/server.js",
             "port": 9229
         }
     ]

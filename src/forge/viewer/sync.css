@@ -1,0 +1,102 @@
+/* "Sync" button, in the row above the diagram (fullscreen.css .mc-actions). */
+#content #image .mc-sync {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-color);
+    box-shadow: 0 1px 2px rgba(9, 30, 66, 0.15);
+    opacity: 0.8;
+    cursor: pointer;
+    line-height: 0;
+}
+#content #image:hover .mc-sync,
+#content #image .mc-sync:focus-visible {
+    opacity: 1;
+}
+#content #image .mc-sync:hover {
+    background: #f1f2f4;
+}
+#content #image .mc-sync:focus-visible {
+    outline: 2px solid #388bff;
+    outline-offset: 1px;
+}
+#content #image .mc-sync:disabled {
+    cursor: progress;
+}
+#content #image .mc-sync.is-syncing svg {
+    animation: mc-sync-spin 0.9s linear infinite;
+}
+/* "Sync" label under the button on hover and keyboard focus. */
+#content #image .mc-sync::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #172b4d;
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+#content #image .mc-sync:hover::after,
+#content #image .mc-sync:focus-visible::after {
+    opacity: 1;
+}
+/* sync.js hides the label once the button is clicked, until the pointer leaves it. */
+#content #image .mc-sync.mc-tooltip-off::after {
+    opacity: 0;
+}
+/* general.css colours every element; let the icon stroke follow the button colour. */
+.mc-sync * {
+    color: inherit;
+}
+@keyframes mc-sync-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #content #image .mc-sync.is-syncing svg {
+        animation: none;
+    }
+}
+/* In the button row above the diagram, filling the space left of the buttons. */
+.mc-sync-notice {
+    flex: 1;
+    align-self: center;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #ae2e24;
+    text-align: right;
+}
+/* Progress and success ("Syncing…", "Diagram updated.", "already up to date") are information, not errors. */
+.mc-sync-notice.is-info {
+    color: var(--text-color);
+    /* Short, so one line: on a narrow diagram the row overflows to the left, beside the diagram. */
+    flex: none;
+    white-space: nowrap;
+}
+.mc-sync-signin {
+    margin-left: 4px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #0c66e4;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+}
