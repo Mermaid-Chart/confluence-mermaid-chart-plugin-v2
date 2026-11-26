@@ -109,7 +109,7 @@ export function addSyncControl({ container, documentID, pageId, render }) {
         notice.hidden = !status;
         // Sync takes a few seconds, so say when it worked; the message then clears itself.
         if (status === 'updated') {
-            hideTimer = setTimeout(() => showNotice(''), 4000);
+            hideTimer = setTimeout(() => showNotice(''), 8000);
         }
         if (status === 'signed-out') {
             const signInLink = document.createElement('button');
