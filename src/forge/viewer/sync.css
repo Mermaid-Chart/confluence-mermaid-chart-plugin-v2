@@ -73,12 +73,15 @@
         animation: none;
     }
 }
+/* In the button row above the diagram, filling the space left of the buttons. */
 .mc-sync-notice {
-    margin: 6px 0 0;
-    font-size: 12px;
+    flex: 1;
+    align-self: center;
+    margin: 0;
+    font-size: 13px;
     line-height: 1.4;
     color: #ae2e24;
-    text-align: center;
+    text-align: right;
 }
 /* Progress and success ("Syncing…", "Diagram updated.", "already up to date") are information, not errors. */
 .mc-sync-notice.is-info {
