@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 
-const defaultBaseURL = 'https://test.mermaidchart.com';
+const defaultBaseURL = 'https://mermaid.ai';
 
 const CLIENT_KEY = 'all';
 

@@ -3,7 +3,7 @@ import { fetchLatestDiagram } from '../utils/diagramSync.js';
 import { requireForgeInvocation } from '../utils/forgeAuth.js';
 import { fetchForgeUserToken, saveForgeUserToken } from '../utils/forgeUserProps.js';
 
-const MC_BASE_URL = process.env.MC_BASE_URL || 'https://test.mermaidchart.com';
+const MC_BASE_URL = process.env.MC_BASE_URL || 'https://mermaid.ai';
 
 /**
  * Forge Remote routes, called from the Custom UI editor through invokeRemote.

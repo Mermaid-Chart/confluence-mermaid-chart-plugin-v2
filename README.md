@@ -8,7 +8,7 @@ Forge app for Confluence. It is the same Marketplace app as the old Connect app,
 |---|---|---|
 | Viewer (`src/forge/viewer`) | Forge Custom UI, hosted by Atlassian | Renders the saved diagram image from the macro config. Never calls our server. |
 | Editor (`src/forge/editor`) | Forge Custom UI, hosted by Atlassian | Signs the user in to Mermaid Chart, then shows the Mermaid Chart editor in an iframe and saves the result into the macro config. |
-| Remote server (`api/index.js`) | Vercel, `https://confluence.mermaidchart.com` | Mermaid Chart sign-in, token storage, and `public/js/plugin.js`. |
+| Remote server (`api/index.js`) | Vercel, `https://confluence.mermaid.ai` | Mermaid Chart sign-in, token storage, and `public/js/plugin.js`. |
 
 Editing a diagram:
 
@@ -70,7 +70,7 @@ Environment variables (Vercel, or `.env` locally; see `.env.example`):
 
 | Variable | Meaning |
 |---|---|
-| `MC_BASE_URL` | Mermaid Chart site the editor iframes. Defaults to `https://test.mermaidchart.com`; set the production URL in Vercel. Its host must be in `manifest.yml` `permissions.external.frames`. |
+| `MC_BASE_URL` | Mermaid Chart site the editor iframes. Defaults to `https://mermaid.ai`; set it explicitly in Vercel. Its host must be in `manifest.yml` `permissions.external.frames`. |
 | `LOCAL_BASE_URL` | Public URL of this server. Mermaid Chart redirects to `${LOCAL_BASE_URL}/callback`, which must be registered for the Confluence client in Mermaid Chart. |
 | `MC_CLIENT_ID` | Mermaid Chart OAuth client id. |
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or `DB_URL` / `DB_TOKEN`) | Redis for the sign-in state. |

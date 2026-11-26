@@ -7,7 +7,7 @@ app:
     name: nodejs24.x
 remotes:
   - key: connect
-    baseUrl: https://confluencetest.mermaidchart.com
+    baseUrl: https://confluence.mermaid.ai
     operations:
       - compute
       - fetch
