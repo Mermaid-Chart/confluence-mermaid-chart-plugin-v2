@@ -73,16 +73,22 @@
         animation: none;
     }
 }
+/* In the button row above the diagram, filling the space left of the buttons. */
 .mc-sync-notice {
-    margin: 6px 0 0;
-    font-size: 12px;
+    flex: 1;
+    align-self: center;
+    margin: 0;
+    font-size: 13px;
     line-height: 1.4;
     color: #ae2e24;
-    text-align: center;
+    text-align: right;
 }
-/* "Already up to date" is information, not an error. */
+/* Progress and success ("Syncing…", "Diagram updated.", "already up to date") are information, not errors. */
 .mc-sync-notice.is-info {
     color: var(--text-color);
+    /* Short, so one line: on a narrow diagram the row overflows to the left, beside the diagram. */
+    flex: none;
+    white-space: nowrap;
 }
 .mc-sync-signin {
     margin-left: 4px;

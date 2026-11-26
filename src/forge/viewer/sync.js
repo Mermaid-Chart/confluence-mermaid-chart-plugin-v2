@@ -6,6 +6,9 @@ const SYNC_ICON = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" s
 
 const EDIT = 'Edit this page and open the diagram';
 
+/** Shown in normal text; every other status is an error. */
+const INFO_STATUSES = new Set(['syncing', 'updated', 'unchanged']);
+
 /** One-line explanation when the diagram can't be synced. */
 function syncMessage(status) {
     const messages = {
@@ -14,6 +17,8 @@ function syncMessage(status) {
         unavailable: `This diagram couldn't be loaded from your Mermaid Chart account. ${EDIT} to see why.`,
         'signed-out': 'Sign in to Mermaid Chart to sync this diagram.',
         unchanged: 'This diagram is already up to date.',
+        syncing: 'Syncing with Mermaid…',
+        updated: 'Diagram updated.',
         'no-page-access': 'You need permission to edit this page to sync this diagram.',
         'not-on-page': "This diagram isn't on the published page yet. Publish the page, then sync.",
         'too-large': `The latest version is too large to save here. ${EDIT} to save a smaller copy.`,
@@ -71,15 +76,41 @@ export function addSyncControl({ container, documentID, pageId, render }) {
     notice.className = 'mc-sync-notice';
     notice.setAttribute('role', 'status');
     notice.hidden = true;
-    container.after(notice);
 
-    // render() rebuilds the container, so look the button row up each time.
-    const placeButton = () => (container.querySelector('.mc-actions') ?? container).prepend(button);
+    // Saving the page can make Confluence reload this frame before Sync's reply arrives, so
+    // remember a Sync in progress and let the reloaded frame say the diagram was updated.
+    const pendingKey = `mc-sync:${pageId}:${documentID}`;
+    const markSyncing = () => {
+        try {
+            sessionStorage.setItem(pendingKey, String(Date.now()));
+        } catch {
+            // Storage is blocked in this frame: the reloaded frame just shows no message.
+        }
+    };
+    const takeRecentSync = () => {
+        try {
+            const startedAt = Number(sessionStorage.getItem(pendingKey));
+            sessionStorage.removeItem(pendingKey);
+            return startedAt > 0 && Date.now() - startedAt < 60_000;
+        } catch {
+            return false;
+        }
+    };
 
+    // render() rebuilds the container, so look the button row up each time. The message sits in
+    // the same row, left of the button, so it is seen without scrolling on a tall diagram.
+    const placeButton = () => (container.querySelector('.mc-actions') ?? container).prepend(notice, button);
+
+    let hideTimer;
     const showNotice = (status) => {
+        clearTimeout(hideTimer);
         notice.textContent = status ? syncMessage(status) : '';
-        notice.classList.toggle('is-info', status === 'unchanged');
+        notice.classList.toggle('is-info', INFO_STATUSES.has(status));
         notice.hidden = !status;
+        // Sync takes a few seconds, so say when it worked; the message then clears itself.
+        if (status === 'updated') {
+            hideTimer = setTimeout(() => showNotice(''), 8000);
+        }
         if (status === 'signed-out') {
             const signInLink = document.createElement('button');
             signInLink.type = 'button';
@@ -105,15 +136,20 @@ export function addSyncControl({ container, documentID, pageId, render }) {
         }
         button.disabled = true;
         button.classList.add('is-syncing');
-        showNotice('');
+        showNotice('syncing');
+        markSyncing();
         try {
             const result = await syncOnPage(documentID, pageId);
+            // The reply reached this frame, so it shows the result itself.
+            takeRecentSync();
             if (result?.status === 'synced' && typeof result.svg === 'string') {
                 render(result.svg);
+                showNotice('updated');
             } else {
                 showNotice(result?.status ?? 'error');
             }
         } catch (error) {
+            takeRecentSync();
             console.error({ err: error.message }, 'Sync failed');
             showNotice('error');
         } finally {
@@ -131,4 +167,8 @@ export function addSyncControl({ container, documentID, pageId, render }) {
     button.addEventListener('mouseleave', () => button.classList.remove('mc-tooltip-off'));
 
     placeButton();
+    // Confluence reloaded this frame after Sync saved the page.
+    if (takeRecentSync()) {
+        showNotice('updated');
+    }
 }
