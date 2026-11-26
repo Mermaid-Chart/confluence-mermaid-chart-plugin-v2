@@ -86,6 +86,9 @@
 /* Progress and success ("Syncing…", "Diagram updated.", "already up to date") are information, not errors. */
 .mc-sync-notice.is-info {
     color: var(--text-color);
+    /* Short, so one line: on a narrow diagram the row overflows to the left, beside the diagram. */
+    flex: none;
+    white-space: nowrap;
 }
 .mc-sync-signin {
     margin-left: 4px;
