@@ -1,64 +1,73 @@
+import svelte from 'rollup-plugin-svelte';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import postcss from 'rollup-plugin-postcss';
+import postcssUrl from 'postcss-url';
+import json from '@rollup/plugin-json';
 import copy from 'rollup-plugin-copy';
+import Icons from 'unplugin-icons/rollup';
 
 const production = process.env.NODE_ENV === 'production' || !process.env.ROLLUP_WATCH;
 
-const forgeViewer = {
-  input: 'src/forge/viewer/main.js',
+export default {
+  input: 'src/svelte/main.js',
   output: {
+    sourcemap: !production,
     format: 'es',
-    file: 'static/viewer/viewer.js',
-    inlineDynamicImports: true
+    name: 'SvelteEditorComponents',
+    dir: 'dist/svelte',
+    entryFileNames: 'editor-components.js',
+    chunkFileNames: '[name]-[hash].js'
   },
   plugins: [
+    json(),
+    Icons({
+      compiler: 'svelte',
+    }),
     copy({
       targets: [
-        { src: 'src/forge/viewer/index.html', dest: 'static/viewer' },
-        { src: 'public/icon_80x80.png', dest: 'static/viewer' },
-        { src: 'public/mermaid-icon.svg', dest: 'static/viewer' },
-        { src: 'public/mermaid-icon-256.png', dest: 'static/viewer' }
+        {
+          src: 'node_modules/@fontsource/recursive/files/*',
+          dest: 'dist/svelte/files'
+        },
+        {
+          src: 'node_modules/@fortawesome/fontawesome-free/webfonts/*',
+          dest: 'dist/svelte/webfonts'
+        }
       ]
     }),
     postcss({
-      extract: 'viewer.css',
+      extract: 'editor-styles.css',
       minimize: production,
-      config: false
-    }),
-    resolve({ browser: true }),
-    commonjs(),
-    production && terser()
-  ]
-};
-
-const forgeEditor = {
-  input: 'src/forge/editor/main.js',
-  output: {
-    format: 'es',
-    file: 'static/editor/editor.js',
-    inlineDynamicImports: true
-  },
-  plugins: [
-    copy({
-      targets: [
-        { src: 'src/forge/editor/index.html', dest: 'static/editor' },
-        { src: 'public/spinner.svg', dest: 'static/editor' }
+      plugins: [
+        postcssUrl({
+          url: (asset) => {
+            // Rewrite Font Awesome font paths
+            if (asset.url.includes('../webfonts/')) {
+              return asset.url.replace('../webfonts/', './webfonts/');
+            }
+            return asset.url;
+          }
+        })
       ]
     }),
-    postcss({
-      extract: 'editor.css',
-      minimize: production,
-      config: false
+    svelte({
+      compilerOptions: {
+        dev: !production
+      },
+      emitCss: false 
     }),
     resolve({
       browser: true,
-      dedupe: ['preact']
+      dedupe: ['svelte'],
+      preferBuiltins: false
     }),
     commonjs(),
+    
     production && terser()
-  ]
+  ],
+  watch: {
+    clearScreen: false
+  }
 };
-
-export default [forgeViewer, forgeEditor];

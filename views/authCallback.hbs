@@ -1,0 +1,23 @@
+{{!< layout}}
+
+<div class="container">
+    {{#if errorMessage}}
+        Authentication failed. <br />
+        {{errorMessage}} <br />
+        Please try again later
+    {{else}}
+        Redirecting...
+        <script type="text/javascript">
+            window.close();
+        </script>
+    {{/if}}
+</div>
+<style>
+    .container {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 24px;
+    }
+</style>
