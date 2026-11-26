@@ -17,7 +17,7 @@ function syncMessage(status) {
         unavailable: `This diagram couldn't be loaded from your Mermaid Chart account. ${EDIT} to see why.`,
         'signed-out': 'Sign in to Mermaid Chart to sync this diagram.',
         unchanged: 'This diagram is already up to date.',
-        syncing: 'Syncing with Mermaid Chart…',
+        syncing: 'Syncing with Mermaid…',
         updated: 'Diagram updated.',
         'no-page-access': 'You need permission to edit this page to sync this diagram.',
         'not-on-page': "This diagram isn't on the published page yet. Publish the page, then sync.",
