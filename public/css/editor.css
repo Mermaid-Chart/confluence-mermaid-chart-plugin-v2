@@ -1036,3 +1036,37 @@ iframe {
   .unselected-theme:hover {
     background-color: #c0dce1;
   }
+
+/* Banner asking legacy (Connect) users to update to the Forge version. */
+.mc-legacy-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  background-color: #fff7d6;
+  border-bottom: 1px solid #f5cd47;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.mc-legacy-banner,
+.mc-legacy-banner * {
+  font-size: 13px;
+  color: #172b4d;
+}
+
+/* Cancel sits under the sign-in button, so the banner is the only bar at the top. */
+.login-cancel {
+  align-self: center;
+  margin-top: 8px;
+}
+
+#editor-content,
+.iframe-container,
+.diagram-selector-page {
+  top: var(--mc-banner-height, 0px);
+  height: calc(100vh - var(--mc-banner-height, 0px));
+}
