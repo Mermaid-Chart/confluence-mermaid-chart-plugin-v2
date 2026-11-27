@@ -56,12 +56,6 @@ export function Login({onLogin, onCancel}) {
 
   return html`
     <div class="iframe-container">
-      <div class="iframe-cancel">
-        <button type="button" class="cancel-button" onClick=${onCancelClick}>
-          Cancel
-        </button>
-      </div>
-      
       <div class="confluence-mermaid-chart-container">
         <div class="chart-selection-container">
           <h2>Sign in to edit Mermaid diagrams in Confluence</h2>
@@ -73,6 +67,9 @@ export function Login({onLogin, onCancel}) {
               <p>Sign in to access your diagrams, version history, and team collaboration. Local diagrams stay unchanged until you sign in and import them. Free accounts can save up to 3 diagrams.</p>
               <button id="login-button" class="primary-button" onClick=${onLoginClick}>
                 Sign in to Mermaid Chart
+              </button>
+              <button type="button" class="cancel-button login-cancel" onClick=${onCancelClick}>
+                Cancel
               </button>
             </div>
           </div>
