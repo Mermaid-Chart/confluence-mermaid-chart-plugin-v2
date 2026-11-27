@@ -8,7 +8,7 @@ Forge app for Confluence. It is the same Marketplace app as the old Connect app,
 |---|---|---|
 | Viewer (`src/forge/viewer`) | Forge Custom UI, hosted by Atlassian | Renders the saved diagram image from the macro config. Never calls our server. |
 | Editor (`src/forge/editor`) | Forge Custom UI, hosted by Atlassian | Signs the user in to Mermaid Chart, then shows the Mermaid Chart editor in an iframe and saves the result into the macro config. |
-| Remote server (`api/index.js`) | Vercel, `https://confluence.mermaid.ai` | Mermaid Chart sign-in, token storage, and `public/js/plugin.js`. |
+| Remote server (`api/index.js`) | Vercel, `https://confluencestage.mermaid.ai` | Mermaid Chart sign-in, token storage, and `public/js/plugin.js`. |
 
 Editing a diagram:
 

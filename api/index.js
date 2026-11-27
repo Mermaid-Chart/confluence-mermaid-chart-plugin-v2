@@ -11,7 +11,8 @@ import { createRedisStore } from '../utils/redisStore.js';
 import forgeRoutes from '../routes/forge.js';
 
 const MC_BASE_URL = process.env.MC_BASE_URL || 'https://mermaid.ai';
-const LOCAL_BASE_URL = process.env.LOCAL_BASE_URL || 'https://confluence.mermaid.ai';
+const LOCAL_BASE_URL =
+  process.env.LOCAL_BASE_URL || 'https://confluencestage.mermaid.ai';
 const PORT = process.env.PORT || 3000;
 
 const app = express();
